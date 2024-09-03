@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib", "lib/clipsruby"]
   s.extensions = ["ext/clipsruby/extconf.rb"]
   s.homepage    =
-    "https://github.com/mrryanjohnston/clipsruby"
+    "https://rubygems.org/gems/clipsruby"
+  s.metadata    = { "source_code_uri" => "https://github.com/mrryanjohnston/clipsruby" }
   s.license       = "MIT"
 end
