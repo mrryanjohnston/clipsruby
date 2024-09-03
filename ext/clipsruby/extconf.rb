@@ -1,2 +1,2 @@
 require 'mkmf'
-create_makefile('clipsruby')
+create_makefile('clipsruby/clipsruby')
