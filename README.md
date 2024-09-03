@@ -7,7 +7,7 @@ Use the CLIPS programming language from within Ruby
 ## Example
 
 ```ruby
-require_relative("./clipsruby")
+require "clipsruby"
 
 class CLIPS::Environment
 	def foo(a, b=2)
