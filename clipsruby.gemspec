@@ -2,7 +2,7 @@ require 'rake'
 
 Gem::Specification.new do |s|
   s.name        = "clipsruby"
-  s.version     = "0.0.3"
+  s.version     = "0.0.4"
   s.summary     = "Calling CLIPS from within Ruby"
   s.description = "Calling the CLIPS programming language from within Ruby"
   s.authors     = ["Ryan Johnston"]
@@ -11,6 +11,6 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib", "lib/clipsruby"]
   s.extensions = ["ext/clipsruby/extconf.rb"]
   s.homepage    =
-    "https://rubygems.org/gems/clipsruby"
+    "https://github.com/mrryanjohnston/clipsruby"
   s.license       = "MIT"
 end
