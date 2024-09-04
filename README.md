@@ -4,27 +4,98 @@
 
 Use the CLIPS programming language from within Ruby
 
-## Example
+## API
+
+### `CLIPS.create_environment`
+### `CLIPS::Environment.new`
+
+Create a new CLIPS environment in which you may define Rules,
+assert Facts, and instantiate Objects.
 
 ```ruby
-require "clipsruby"
+env = CLIPS.create_environment
+env2 = CLIPS::Environment.new
+```
 
+### `CLIPS::Environment.assert_string`
+### `CLIPS::Environment#assert_string`
+
+Assert a string as a Fact in the CLIPS environment.
+
+```ruby
+fact = CLIPS::Environment.assert_string(env, "(foo bar)")
+fact2 = env.assert_string("(bat baz)")
+```
+
+### `CLIPS::Environment.assert_hash`
+### `CLIPS::Environment#assert_hash`
+
+Asserts a Deftemplate fact into the CLIPS environment
+
+```ruby
+fact = CLIPS::Environment.assert_hash(env, :my_deftemplate, a: 1, b: "asdf", c: :C)
+fact2 = env.assert_hash(:my_deftemplate, d: 4.5, e: :asdf)
+```
+
+### `CLIPS::Environment.build`
+### `CLIPS::Environment#build`
+
+Build the constructs in the env as defined in a string
+
+```ruby
+CLIPS::Environment.build(env, "(deftemplate my_template (slot a) (slot b) (slot c))")
+env.build("(defrule do-a-thing (my_template (a ?a)) => (println \"a: \" ?a))")
+```
+
+### `CLIPS::Environment.add_udf`
+### `CLIPS::Environment#add_udf`
+
+Adds a ruby method as a User Defined Function (udf) to the CLIPS environment
+
+```ruby
 class CLIPS::Environment
 	def foo(a, b=2)
-		puts "a: #{a}"
-		puts "b: #{b}"
 		a + b
+	end
+	
+	def bar(word)
+		"You said #{word}!"
 	end
 end
 
-env = CLIPS::Environment.new
-puts "foo: #{env.add_udf(:foo)}"
-env.build("(deftemplate foo (slot bar) (slot baz) (slot bat) (slot buz))")
-env.assert_string("(foo (bar 123) (baz something) (bat 4.56) (buz fizz))")
-fact = env.assert_hash(:foo, bar: 789, baz: :thing, bat: 3.8, buz: "another thing")
-p fact.deftemplate_name
-env.facts
-env.build("(defrule foo (foo (bar ?bar) (bat ?bat)) => (println \"bar + bat: \" (foo ?bar)))")
-env.run(1)
+env.add_udf(:foo)
+CLIPS::Environment.add_udf(env, :bar)
+```
+
+### `CLIPS::Environment.run`
+### `CLIPS::Environment#run`
+
+Runs the rules engine, executing items on the agenda.
+Optionally may take the number of items to run from the agenda as an argument.
+
+```ruby
+CLIPS::Environment.run(env, 1)
 CLIPS::Environment.run(env)
+env.run(1)
+env.run
+```
+
+### `CLIPS::Environment.facts`
+### `CLIPS::Environment#facts`
+
+Print all Facts defined in the CLIPS environment
+
+```ruby
+CLIPS::Environment.facts(env)
+env.facts
+```
+
+### `CLIPS::Environment::Fact.deftemplate_name`
+### `CLIPS::Environment::Fact#deftemplate_name`
+
+Returns the name of the Deftemplate for a fact as a symbol
+
+```ruby
+CLIPS::Environment::Fact.deftemplate_name(fact)
+fact.deftemplate_name
 ```
