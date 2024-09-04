@@ -323,8 +323,10 @@ static VALUE clips_environment_static_assert_hash(VALUE self, VALUE environment,
 	return clips_environment_assert_hash(environment, deftemplate_name, hash);
 }
 
-static void CLIPSValue_to_VALUE(CLIPSValue *from, VALUE *value, Environment *env)
+static void CLIPSValue_to_VALUE(CLIPSValue *from, VALUE *value, VALUE *rbEnvironment)
 {
+	Environment *env;
+	TypedData_Get_Struct(*rbEnvironment, Environment, &Environment_type, env);
 	switch (from->header->type)
 	{
 		case VOID_TYPE:
@@ -338,7 +340,7 @@ static void CLIPSValue_to_VALUE(CLIPSValue *from, VALUE *value, Environment *env
 			for (size_t i = 0; i < from->multifieldValue->length; i++)
 			{
 				VALUE innerValue;
-				CLIPSValue_to_VALUE(&from->multifieldValue->contents[i], &innerValue, env);
+				CLIPSValue_to_VALUE(&from->multifieldValue->contents[i], &innerValue, rbEnvironment);
 				rb_ary_push(*value, innerValue);
 			}
 			break;
@@ -358,8 +360,13 @@ static void CLIPSValue_to_VALUE(CLIPSValue *from, VALUE *value, Environment *env
 		case INSTANCE_NAME_TYPE:
 			*value = rb_str_new2(from->lexemeValue->contents);
 			break;
-		case EXTERNAL_ADDRESS_TYPE:
 		case FACT_ADDRESS_TYPE:
+			*value =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(*rbEnvironment), rb_intern("Fact")), &Fact_type, from->factValue);
+
+			rb_iv_set(*value, "@environment", *rbEnvironment);
+			break;
+		case EXTERNAL_ADDRESS_TYPE:
 		case INSTANCE_ADDRESS_TYPE:
 		default:
 			WriteString(env,STDERR,"Unsupported data type returned from function\n");
@@ -368,8 +375,10 @@ static void CLIPSValue_to_VALUE(CLIPSValue *from, VALUE *value, Environment *env
 	}
 }
 
-static void UDFValue_to_VALUE(UDFValue *from, VALUE *value, Environment *env)
+static void UDFValue_to_VALUE(UDFValue *from, VALUE *value, VALUE *rbEnvironment)
 {
+	Environment *env;
+	TypedData_Get_Struct(*rbEnvironment, Environment, &Environment_type, env);
 	switch (from->header->type)
 	{
 		case VOID_TYPE:
@@ -383,7 +392,7 @@ static void UDFValue_to_VALUE(UDFValue *from, VALUE *value, Environment *env)
 			VALUE innerValue;
 			for (size_t i = 0; i < from->multifieldValue->length; i++)
 			{
-				CLIPSValue_to_VALUE(&from->multifieldValue->contents[i], &innerValue, env);
+				CLIPSValue_to_VALUE(&from->multifieldValue->contents[i], &innerValue, rbEnvironment);
 				rb_ary_push(*value, innerValue);
 			}
 			break;
@@ -403,8 +412,13 @@ static void UDFValue_to_VALUE(UDFValue *from, VALUE *value, Environment *env)
 		case INSTANCE_NAME_TYPE:
 			*value = rb_str_new2(from->lexemeValue->contents);
 			break;
-		case EXTERNAL_ADDRESS_TYPE:
 		case FACT_ADDRESS_TYPE:
+			*value =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(*rbEnvironment), rb_intern("Fact")), &Fact_type, from->factValue);
+
+			rb_iv_set(*value, "@environment", *rbEnvironment);
+			break;
+		case EXTERNAL_ADDRESS_TYPE:
 		case INSTANCE_ADDRESS_TYPE:
 		default:
 			WriteString(env,STDERR,"Unsupported data type returned from function\n");
@@ -424,10 +438,11 @@ void UDFGenericFunction(
 	UDFValue theArg;
 	VALUE method = (VALUE)(context->context);
 	VALUE theValue;
+	VALUE rbEnvironment = rb_funcall(method, rb_intern("receiver"), 0);
 	while (UDFHasNextArgument(context))
 	{
 		UDFNextArgument(context, ANY_TYPE_BITS, &theArg);
-		UDFValue_to_VALUE(&theArg, current_argv, theEnv);
+		UDFValue_to_VALUE(&theArg, current_argv, &rbEnvironment);
 		current_argv++;
 	}
 	// Call the method on the object with the provided arguments
@@ -570,7 +585,7 @@ static VALUE clips_environment_run(int argc, VALUE *argv, VALUE environment) {
 
 	TypedData_Get_Struct(environment, Environment, &Environment_type, env);
 
-	return NUM2INT(Run(env, NUM2INT(integer)));
+	return INT2NUM(Run(env, NUM2INT(integer)));
 }
 
 static VALUE clips_environment_static_run(int argc, VALUE *argv, VALUE klass) {
@@ -584,7 +599,53 @@ static VALUE clips_environment_static_run(int argc, VALUE *argv, VALUE klass) {
 
 	TypedData_Get_Struct(environment, Environment, &Environment_type, env);
 
-	return NUM2INT(Run(env, NUM2INT(integer)));
+	return INT2NUM(Run(env, NUM2INT(integer)));
+}
+
+/*
+static VALUE clips_environment_find_all_facts(VALUE self)
+{
+	Fact *fact;
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+
+	return ID2SYM(rb_intern(DeftemplateName(FactDeftemplate(fact))));
+}
+
+static VALUE clips_environment_static_find_all_facts(VALUE self, VALUE rbFact)
+{
+	return clips_environment_fact_deftemplate_name(rbFact);
+}
+*/
+
+static VALUE clips_environment_eval(VALUE self, VALUE string)
+{
+	Environment *env;
+	CLIPSValue output;
+	VALUE toReturn;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch(Eval(env, StringValueCStr(string), &output))
+	{
+		case EE_NO_ERROR:
+			break;
+		case EE_PROCESSING_ERROR:
+			rb_warn("`eval` failed!");
+			break;
+		case EE_PARSING_ERROR:
+			rb_warn("`eval` failed! Could not parse string correctly.");
+			break;
+	}
+
+	CLIPSValue_to_VALUE(&output, &toReturn, &self);
+
+	return toReturn;
+}
+
+static VALUE clips_environment_static_eval(VALUE self, VALUE rbEnvironment, VALUE string)
+{
+	return clips_environment_eval(rbEnvironment, string);
 }
 
 void Init_clipsruby(void)
@@ -606,6 +667,12 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "add_udf", clips_environment_add_udf, -1);
 	rb_define_singleton_method(rbEnvironment, "run", clips_environment_static_run, -1);
 	rb_define_method(rbEnvironment, "run", clips_environment_run, -1);
+	/*
+	rb_define_singleton_method(rbEnvironment, "find_all_facts", clips_environment_static_find_all_facts, 2);
+	rb_define_method(rbEnvironment, "find_all_facts", clips_environment_find_all_facts, 1);
+	*/
+	rb_define_singleton_method(rbEnvironment, "_eval", clips_environment_static_eval, 2);
+	rb_define_method(rbEnvironment, "_eval", clips_environment_eval, 1);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_singleton_method(rbFact, "deftemplate_name", clips_environment_fact_static_deftemplate_name, 1);

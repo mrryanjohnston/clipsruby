@@ -37,6 +37,16 @@ fact = CLIPS::Environment.assert_hash(env, :my_deftemplate, a: 1, b: "asdf", c: 
 fact2 = env.assert_hash(:my_deftemplate, d: 4.5, e: :asdf)
 ```
 
+### `CLIPS::Environment._eval`
+### `CLIPS::Environment#_eval`
+
+Evaluates a passed string in the CLIPS environment and returns the results.
+
+```ruby
+CLIPS::Environment._eval(env, "(find-all-facts ((?f my_deftemplate)) TRUE)")
+env._eval("(find-all-facts ((?f my_deftemplate)) TRUE)")
+```
+
 ### `CLIPS::Environment.build`
 ### `CLIPS::Environment#build`
 
