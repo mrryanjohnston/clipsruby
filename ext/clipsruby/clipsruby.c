@@ -350,7 +350,7 @@ static void CLIPSValue_to_VALUE(CLIPSValue *from, VALUE *value, VALUE *rbEnviron
 			} else if (from->lexemeValue == FalseSymbol(env)) {
 				*value = Qfalse;
 			} else {
-				*value = rb_str_new2(from->lexemeValue->contents);
+				*value = ID2SYM(rb_intern(from->lexemeValue->contents));
 			}
 			break;
 		case INTEGER_TYPE:
@@ -402,7 +402,7 @@ static void UDFValue_to_VALUE(UDFValue *from, VALUE *value, VALUE *rbEnvironment
 			} else if (from->lexemeValue == FalseSymbol(env)) {
 				*value = Qfalse;
 			} else {
-				*value = rb_str_new2(from->lexemeValue->contents);
+				*value = ID2SYM(rb_intern(from->lexemeValue->contents));
 			}
 			break;
 		case INTEGER_TYPE:
@@ -657,6 +657,33 @@ static VALUE clips_environment_static_find_all_facts(int argc, VALUE *argv, VALU
 		rb_sprintf("(find-all-facts (%s) %s)", StringValueCStr(fact_set_template), StringValueCStr(query)));
 }
 
+static VALUE clips_environment_fact_to_h(VALUE self)
+{
+	Fact *fact;
+	CLIPSValue key, value;
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+
+	FactSlotNames(fact, &key);
+
+	VALUE hash = rb_hash_new();
+	for (size_t i = 0; i < key.multifieldValue->length; i++)
+	{
+		VALUE innerValue;
+		GetFactSlot(fact, key.multifieldValue->contents[i].lexemeValue->contents, &value);
+		CLIPSValue_to_VALUE(&value, &innerValue, &rbEnvironment);
+		rb_hash_aset(hash, rb_str_new2(key.multifieldValue->contents[i].lexemeValue->contents), innerValue);
+	}
+
+	return hash;
+}
+
+static VALUE clips_environment_fact_static_to_h(VALUE self, VALUE rbFact)
+{
+	return clips_environment_fact_to_h(rbFact);
+}
+
 void Init_clipsruby(void)
 {
 	VALUE rbCLIPS = rb_define_module("CLIPS");
@@ -684,10 +711,8 @@ void Init_clipsruby(void)
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_singleton_method(rbFact, "deftemplate_name", clips_environment_fact_static_deftemplate_name, 1);
 	rb_define_method(rbFact, "deftemplate_name", clips_environment_fact_deftemplate_name, 0);
-	/*
 	rb_define_singleton_method(rbFact, "to_h", clips_environment_fact_static_to_h, 1);
 	rb_define_method(rbFact, "to_h", clips_environment_fact_to_h, 0);
-	*/
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 }
