@@ -4,6 +4,17 @@
 
 Use the CLIPS programming language from within Ruby
 
+## Installation/Usage
+
+This is available as a Ruby gem:
+
+```
+gem install clipsruby
+```
+
+From there, you should be able to `require "clipsruby"` in your code
+and use the below API as described.
+
 ## API
 
 ### `CLIPS.create_environment`
