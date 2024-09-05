@@ -113,6 +113,16 @@ CLIPS::Environment.facts(env)
 env.facts
 ```
 
+### `CLIPS::Environment::Fact.to_h`
+### `CLIPS::Environment::Fact#to_h`
+
+Returns a hash representing the fact slot names and their values
+
+```ruby
+CLIPS::Environment::Fact.to_h(fact)
+fact.to_h
+```
+
 ### `CLIPS::Environment::Fact.deftemplate_name`
 ### `CLIPS::Environment::Fact#deftemplate_name`
 
