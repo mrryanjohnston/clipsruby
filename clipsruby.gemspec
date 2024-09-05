@@ -2,7 +2,7 @@ require 'rake'
 
 Gem::Specification.new do |s|
   s.name        = "clipsruby"
-  s.version     = "0.0.6"
+  s.version     = "0.0.7"
   s.summary     = "Calling CLIPS from within Ruby"
   s.description = "Calling the CLIPS programming language from within Ruby"
   s.authors     = ["Ryan Johnston"]
@@ -13,5 +13,6 @@ Gem::Specification.new do |s|
   s.homepage    =
     "https://rubygems.org/gems/clipsruby"
   s.metadata    = { "source_code_uri" => "https://github.com/mrryanjohnston/clipsruby" }
+  s.extra_rdoc_files = ["README.md"]
   s.license       = "MIT"
 end

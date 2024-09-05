@@ -37,6 +37,19 @@ fact = CLIPS::Environment.assert_hash(env, :my_deftemplate, a: 1, b: "asdf", c: 
 fact2 = env.assert_hash(:my_deftemplate, d: 4.5, e: :asdf)
 ```
 
+### `CLIPS::Environment.find_all_facts`
+### `CLIPS::Environment#find_all_facts`
+
+A light wrapper around the CLIPS find-all-facts function. Accepts a fact set template and query,
+returns Facts in the environment that match as Ruby objects.
+
+```ruby
+CLIPS::Environment.find_all_facts(env, "(?f my_deftemplate)")
+env.find_all_facts("(?f my_deftemplate)")
+CLIPS::Environment.find_all_facts(env, "(?f my_deftemplate)", "(eq ?f:b \"asdf\")")
+env.find_all_facts("(?f my_deftemplate)", "(= ?f:a 1)")
+```
+
 ### `CLIPS::Environment._eval`
 ### `CLIPS::Environment#_eval`
 

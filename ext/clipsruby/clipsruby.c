@@ -437,7 +437,6 @@ void UDFGenericFunction(
 	VALUE *current_argv = argv;
 	UDFValue theArg;
 	VALUE method = (VALUE)(context->context);
-	VALUE theValue;
 	VALUE rbEnvironment = rb_funcall(method, rb_intern("receiver"), 0);
 	while (UDFHasNextArgument(context))
 	{
@@ -602,22 +601,6 @@ static VALUE clips_environment_static_run(int argc, VALUE *argv, VALUE klass) {
 	return INT2NUM(Run(env, NUM2INT(integer)));
 }
 
-/*
-static VALUE clips_environment_find_all_facts(VALUE self)
-{
-	Fact *fact;
-
-	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
-
-	return ID2SYM(rb_intern(DeftemplateName(FactDeftemplate(fact))));
-}
-
-static VALUE clips_environment_static_find_all_facts(VALUE self, VALUE rbFact)
-{
-	return clips_environment_fact_deftemplate_name(rbFact);
-}
-*/
-
 static VALUE clips_environment_eval(VALUE self, VALUE string)
 {
 	Environment *env;
@@ -648,6 +631,32 @@ static VALUE clips_environment_static_eval(VALUE self, VALUE rbEnvironment, VALU
 	return clips_environment_eval(rbEnvironment, string);
 }
 
+static VALUE clips_environment_find_all_facts(int argc, VALUE *argv, VALUE environment) {
+	VALUE fact_set_template, query;
+
+	rb_scan_args(argc, argv, "11", &fact_set_template, &query);
+	if (NIL_P(query)) {
+		query = rb_str_new_cstr("TRUE");
+	}
+
+	return clips_environment_eval(
+		environment,
+		rb_sprintf("(find-all-facts (%s) %s)", StringValueCStr(fact_set_template), StringValueCStr(query)));
+}
+
+static VALUE clips_environment_static_find_all_facts(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, fact_set_template, query;
+
+	rb_scan_args(argc, argv, "21", &rbEnvironment, &fact_set_template, &query);
+	if (NIL_P(query)) {
+		query = rb_str_new_cstr("TRUE");
+	}
+
+	return clips_environment_eval(
+		rbEnvironment,
+		rb_sprintf("(find-all-facts (%s) %s)", StringValueCStr(fact_set_template), StringValueCStr(query)));
+}
+
 void Init_clipsruby(void)
 {
 	VALUE rbCLIPS = rb_define_module("CLIPS");
@@ -667,12 +676,10 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "add_udf", clips_environment_add_udf, -1);
 	rb_define_singleton_method(rbEnvironment, "run", clips_environment_static_run, -1);
 	rb_define_method(rbEnvironment, "run", clips_environment_run, -1);
-	/*
-	rb_define_singleton_method(rbEnvironment, "find_all_facts", clips_environment_static_find_all_facts, 2);
-	rb_define_method(rbEnvironment, "find_all_facts", clips_environment_find_all_facts, 1);
-	*/
 	rb_define_singleton_method(rbEnvironment, "_eval", clips_environment_static_eval, 2);
 	rb_define_method(rbEnvironment, "_eval", clips_environment_eval, 1);
+	rb_define_singleton_method(rbEnvironment, "find_all_facts", clips_environment_static_find_all_facts, -1);
+	rb_define_method(rbEnvironment, "find_all_facts", clips_environment_find_all_facts, -1);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_singleton_method(rbFact, "deftemplate_name", clips_environment_fact_static_deftemplate_name, 1);
