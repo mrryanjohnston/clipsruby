@@ -143,3 +143,7 @@ Returns the name of the Deftemplate for a fact as a symbol
 CLIPS::Environment::Fact.deftemplate_name(fact)
 fact.deftemplate_name
 ```
+
+## Running the tests
+
+Simply do `rake compile` and then `rake test` in order to run the tests.

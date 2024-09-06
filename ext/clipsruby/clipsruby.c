@@ -673,7 +673,7 @@ static VALUE clips_environment_fact_to_h(VALUE self)
 		VALUE innerValue;
 		GetFactSlot(fact, key.multifieldValue->contents[i].lexemeValue->contents, &value);
 		CLIPSValue_to_VALUE(&value, &innerValue, &rbEnvironment);
-		rb_hash_aset(hash, rb_str_new2(key.multifieldValue->contents[i].lexemeValue->contents), innerValue);
+		rb_hash_aset(hash, ID2SYM(rb_intern(key.multifieldValue->contents[i].lexemeValue->contents)), innerValue);
 	}
 
 	return hash;
@@ -682,6 +682,24 @@ static VALUE clips_environment_fact_to_h(VALUE self)
 static VALUE clips_environment_fact_static_to_h(VALUE self, VALUE rbFact)
 {
 	return clips_environment_fact_to_h(rbFact);
+}
+
+static VALUE clips_environment_batch_star(VALUE self, VALUE path)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	if (BatchStar(env, StringValueCStr(path))) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_static_batch_star(VALUE self, VALUE rbEnvironment, VALUE path)
+{
+	return clips_environment_batch_star(rbEnvironment, path);
 }
 
 void Init_clipsruby(void)
@@ -707,6 +725,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "_eval", clips_environment_eval, 1);
 	rb_define_singleton_method(rbEnvironment, "find_all_facts", clips_environment_static_find_all_facts, -1);
 	rb_define_method(rbEnvironment, "find_all_facts", clips_environment_find_all_facts, -1);
+	rb_define_singleton_method(rbEnvironment, "batch_star", clips_environment_static_batch_star, 2);
+	rb_define_method(rbEnvironment, "batch_star", clips_environment_batch_star, 1);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_singleton_method(rbFact, "deftemplate_name", clips_environment_fact_static_deftemplate_name, 1);
