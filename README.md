@@ -125,6 +125,28 @@ env.run(1)
 env.run
 ```
 
+### `CLIPS::Environment.clear`
+### `CLIPS::Environment#clear`
+
+Removes constructs and data from the environment.
+
+```ruby
+CLIPS::Environment.clear(env)
+env.clear
+```
+
+### `CLIPS::Environment.reset`
+### `CLIPS::Environment#reset`
+
+Removes all facts and instances.
+Creates facts and instances defined in deffacts and definstances constructs.
+Resets the values of global variables in the specified environment.
+
+```ruby
+CLIPS::Environment.reset(env)
+env.reset
+```
+
 ### `CLIPS::Environment.facts`
 ### `CLIPS::Environment#facts`
 
@@ -153,6 +175,37 @@ Returns the name of the Deftemplate for a fact as a symbol
 ```ruby
 CLIPS::Environment::Fact.deftemplate_name(fact)
 fact.deftemplate_name
+```
+
+### `CLIPS::Environment::Fact.slot_names`
+### `CLIPS::Environment::Fact#slot_names`
+
+Returns an array representing the slot names of a fact
+
+```ruby
+CLIPS::Environment::Fact.slot_names(fact)
+fact.slot_names
+```
+
+### `CLIPS::Environment::Fact.get_slot`
+### `CLIPS::Environment::Fact#get_slot`
+
+Gets the value stored in the specified slot of a fact.
+Can either pass a string or symbol for the slot name argument.
+
+```ruby
+CLIPS::Environment::Fact.get_slot(fact, 'bar')
+fact.get_slot(:foo)
+```
+
+### `CLIPS::Environment::Fact.retract`
+### `CLIPS::Environment::Fact#retract`
+
+Retracts a fact from the environment.
+
+```ruby
+CLIPS::Environment::Fact.retract(fact)
+fact.retract
 ```
 
 ## Running the tests
