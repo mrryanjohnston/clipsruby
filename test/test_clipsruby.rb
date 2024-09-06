@@ -121,4 +121,24 @@ class ClipsrubyTest < Minitest::Test
     facts = env.find_all_facts("(?f bar)")
     assert_equal 0, facts.length
   end
+
+  def test_modify
+    env = CLIPS.create_environment
+    assert_nil env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    fact = env.assert_hash(:"my-template", foo: :asdf, bar: [ 1, 2, "hjkl" ])
+    assert_equal :asdf,
+      fact.get_slot(:foo)
+    assert_equal [ 1, 2, "hjkl" ],
+      fact.get_slot('bar')
+    facts = env.find_all_facts("(?f my-template)")
+    assert_equal 1, facts.length
+    fact.modify(bar: ["a new value!"])
+    assert_equal ["a new value!"],
+      fact.get_slot('bar')
+    fact = fact.modify(foo: 67.8)
+    assert_equal 67.8,
+      fact.get_slot('foo')
+    facts = env.find_all_facts("(?f my-template)")
+    assert_equal 1, facts.length
+  end
 end

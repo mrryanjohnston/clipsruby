@@ -208,6 +208,17 @@ CLIPS::Environment::Fact.retract(fact)
 fact.retract
 ```
 
+### `CLIPS::Environment::Fact.modify`
+### `CLIPS::Environment::Fact#modify`
+
+Modifies a non-implicit deftemplate fact from the environment.
+Will not work with non-deftemplate facts!
+
+```ruby
+CLIPS::Environment::Fact.modify(fact, bar: 123)
+fact.modify(foo: "my new foo!")
+```
+
 ## Running the tests
 
 Simply do `rake compile` and then `rake test` in order to run the tests.

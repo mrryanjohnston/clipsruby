@@ -829,6 +829,89 @@ static VALUE clips_environment_fact_static_retract(VALUE self, VALUE rbFact)
 	return clips_environment_fact_retract(rbFact);
 }
 
+static int _clips_environment_fact_modify(VALUE key, VALUE value, VALUE args)
+{
+	const char *cslot_name;
+	switch(TYPE(key))
+	{
+		case T_SYMBOL:
+			cslot_name = rb_id2name(SYM2ID(key));
+			break;
+		case T_STRING:
+			cslot_name = StringValueCStr(key);
+			break;
+		default:
+			rb_raise(rb_eTypeError, "Slot name must be a String or a Symbol");
+			return ST_CONTINUE;
+	}
+
+	VALUE *fm_and_env = (VALUE*)args;
+	FactModifier *fm = (FactModifier*) fm_and_env[0];
+	Environment *env = (Environment*) fm_and_env[1];
+	CLIPSValue cv = VALUE_to_CLIPSValue(value, env);
+	handle_pse_error(FMPutSlot(fm, cslot_name, &cv), cslot_name);
+
+	return ST_CONTINUE;
+}
+
+static VALUE clips_environment_fact_modify(VALUE self, VALUE hash)
+{
+	Fact *fact;
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	Environment *env;
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	FactModifier *fm = CreateFactModifier(env, fact);
+	switch (FMError(env))
+	{
+		case FME_NO_ERROR:
+			break;
+		case FME_RETRACTED_ERROR:
+			rb_warn("Could not modify fact; fact is retracted!");
+			return Qnil;
+		case FME_IMPLIED_DEFTEMPLATE_ERROR:
+			rb_warn("Could not modify fact; cannot use modify to modify non-deftemplated facts!");
+			return Qnil;
+	}
+	void *args[2] = { (void *)fm, (void *)env };
+	rb_hash_foreach(hash, _clips_environment_fact_modify, (VALUE)args);
+	Fact *modified_fact = FMModify(fm);
+	FMDispose(fm);
+
+	switch (FMError(env))
+	{
+		case FME_NO_ERROR:
+			break;
+		case FME_NULL_POINTER_ERROR:
+			rb_warn("Could not modify fact. This might be a bug in clipsruby!");
+			return Qnil;
+		case FME_RETRACTED_ERROR:
+			rb_warn("Could not modify fact; fact is retracted!");
+			return Qnil;
+		case FME_COULD_NOT_MODIFY_ERROR:
+			rb_warn("Could not modify fact. Pattern matching of a fact or instance is already occurring.");
+			return Qnil;
+		case FME_RULE_NETWORK_ERROR:
+			rb_warn("Could not modify fact. An error occurs while the assertion was being processed in the rule network.");
+			return Qnil;
+	}
+
+	VALUE rb_fact =
+		TypedData_Wrap_Struct(CLASS_OF(self), &Fact_type, modified_fact);
+
+	rb_iv_set(rb_fact, "@environment", rbEnvironment);
+
+	return rb_fact;
+}
+
+static VALUE clips_environment_fact_static_modify(VALUE self, VALUE rbFact, VALUE hash)
+{
+	return clips_environment_fact_modify(rbFact, hash);
+}
+
+
 void Init_clipsruby(void)
 {
 	VALUE rbCLIPS = rb_define_module("CLIPS");
@@ -870,6 +953,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbFact, "get_slot", clips_environment_fact_get_slot, 1);
 	rb_define_singleton_method(rbFact, "retract", clips_environment_fact_static_retract, 1);
 	rb_define_method(rbFact, "retract", clips_environment_fact_retract, 0);
+	rb_define_singleton_method(rbFact, "modify", clips_environment_fact_static_modify, 2);
+	rb_define_method(rbFact, "modify", clips_environment_fact_modify, 1);
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 }
