@@ -28,6 +28,17 @@ env = CLIPS.create_environment
 env2 = CLIPS::Environment.new
 ```
 
+### `CLIPS::Environment.batch_star`
+### `env.batch_star`
+
+Pass the path to a file that will be "batched" into the environment,
+allowing many CLIPS commands to be entered at once.
+
+```ruby
+CLIPS::Environment.batch_star(env, "./my-batch.bat")
+env.batch_star("./my-batch.bat")
+```
+
 ### `CLIPS::Environment.assert_string`
 ### `CLIPS::Environment#assert_string`
 
