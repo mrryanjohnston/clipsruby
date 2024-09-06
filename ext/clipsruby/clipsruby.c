@@ -290,6 +290,17 @@ static VALUE clips_environment_assert_hash(VALUE self, VALUE deftemplate_name, V
 	TypedData_Get_Struct(self, Environment, &Environment_type, env);
 
 	FactBuilder *fb = CreateFactBuilder(env, cdeftemplate_name);
+	switch (FBError(env))
+	{
+		case FBE_NO_ERROR:
+			break;
+		case FBE_DEFTEMPLATE_NOT_FOUND_ERROR:
+			rb_warn("Could not assert fact; deftemplate not found!");
+			return Qnil;
+		case FBE_IMPLIED_DEFTEMPLATE_ERROR:
+			rb_warn("Could not assert fact; cannot use assert_hash to create non-deftemplated facts!");
+			return Qnil;
+	}
 	void *args[2] = { (void *)fb, (void *)env };
 	rb_hash_foreach(hash, _clips_environment_assert_hash, (VALUE)args);
 	Fact *fact = FBAssert(fb);
@@ -702,6 +713,122 @@ static VALUE clips_environment_static_batch_star(VALUE self, VALUE rbEnvironment
 	return clips_environment_batch_star(rbEnvironment, path);
 }
 
+static VALUE clips_environment_clear(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	if (Clear(env)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_static_clear(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_clear(rbEnvironment);
+}
+
+static VALUE clips_environment_reset(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Reset(env);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_reset(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_reset(rbEnvironment);
+}
+
+static VALUE clips_environment_fact_slot_names(VALUE self)
+{
+	Fact *fact;
+	CLIPSValue slot_names;
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+
+	FactSlotNames(fact, &slot_names);
+
+	VALUE array;
+
+	CLIPSValue_to_VALUE(&slot_names, &array, &rbEnvironment);
+
+	return array;
+}
+
+static VALUE clips_environment_fact_static_slot_names(VALUE self, VALUE rbFact)
+{
+	return clips_environment_fact_slot_names(rbFact);
+}
+
+static VALUE clips_environment_fact_get_slot(VALUE self, VALUE slot_name)
+{
+	Fact *fact;
+	CLIPSValue slot_value;
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+
+	switch (TYPE(slot_name)) {
+		case T_STRING:
+			GetFactSlot(fact, StringValueCStr(slot_name), &slot_value);
+			break;
+		case T_SYMBOL:
+			GetFactSlot(fact, rb_id2name(SYM2ID(slot_name)), &slot_value);
+			break;
+                default:
+			rb_warn("slot name must be string or symbol in call to get_slot!");
+			return Qnil;
+        }
+
+	VALUE out;
+
+	CLIPSValue_to_VALUE(&slot_value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_fact_static_get_slot(VALUE self, VALUE rbFact, VALUE slot_name)
+{
+	return clips_environment_fact_get_slot(rbFact, slot_name);
+}
+
+static VALUE clips_environment_fact_retract(VALUE self)
+{
+	Fact *fact;
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+
+	switch (Retract(fact)) {
+		case RE_NO_ERROR:
+			break;
+		case RE_NULL_POINTER_ERROR:
+			rb_warn("could not retract fact; null pointer error. This could be a bug in clipsruby!");
+			return Qfalse;
+		case RE_COULD_NOT_RETRACT_ERROR:
+			rb_warn("could not retract fact! is pattern matching currently happening with this fact?");
+			return Qfalse;
+		case RE_RULE_NETWORK_ERROR:
+			rb_warn("could not retract fact! An error occurs while the retraction was being processed in the rule network");
+			return Qfalse;
+        }
+
+	return Qtrue;
+}
+
+static VALUE clips_environment_fact_static_retract(VALUE self, VALUE rbFact)
+{
+	return clips_environment_fact_retract(rbFact);
+}
+
 void Init_clipsruby(void)
 {
 	VALUE rbCLIPS = rb_define_module("CLIPS");
@@ -727,12 +854,22 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "find_all_facts", clips_environment_find_all_facts, -1);
 	rb_define_singleton_method(rbEnvironment, "batch_star", clips_environment_static_batch_star, 2);
 	rb_define_method(rbEnvironment, "batch_star", clips_environment_batch_star, 1);
+	rb_define_singleton_method(rbEnvironment, "clear", clips_environment_static_clear, 1);
+	rb_define_method(rbEnvironment, "clear", clips_environment_clear, 0);
+	rb_define_singleton_method(rbEnvironment, "reset", clips_environment_static_reset, 1);
+	rb_define_method(rbEnvironment, "reset", clips_environment_reset, 0);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_singleton_method(rbFact, "deftemplate_name", clips_environment_fact_static_deftemplate_name, 1);
 	rb_define_method(rbFact, "deftemplate_name", clips_environment_fact_deftemplate_name, 0);
 	rb_define_singleton_method(rbFact, "to_h", clips_environment_fact_static_to_h, 1);
 	rb_define_method(rbFact, "to_h", clips_environment_fact_to_h, 0);
+	rb_define_singleton_method(rbFact, "slot_names", clips_environment_fact_static_slot_names, 1);
+	rb_define_method(rbFact, "slot_names", clips_environment_fact_slot_names, 0);
+	rb_define_singleton_method(rbFact, "get_slot", clips_environment_fact_static_get_slot, 2);
+	rb_define_method(rbFact, "get_slot", clips_environment_fact_get_slot, 1);
+	rb_define_singleton_method(rbFact, "retract", clips_environment_fact_static_retract, 1);
+	rb_define_method(rbFact, "retract", clips_environment_fact_retract, 0);
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 }

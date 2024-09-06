@@ -63,4 +63,62 @@ class ClipsrubyTest < Minitest::Test
     facts = env.find_all_facts("(?f bar)")
     assert_equal 1, facts.length
   end
+
+  def test_clear
+    env = CLIPS.create_environment
+    env.build("(defrule runs-once =>)")
+    assert_nil env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    env.assert_string("(bar 1 2)")
+    env.clear
+    refute env.find_all_facts("(?f bar)")
+    assert_equal 0, env.run
+    assert_nil env.assert_hash(:"my-template", foo: :asdf, bar: [ 1, 2, "hjkl" ])
+  end
+
+  def test_reset
+    env = CLIPS.create_environment
+    env.build("(deffacts my-facts (foo bar) (foo bat) (foo zig))")
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 0, facts.length
+    env.reset
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 3, facts.length
+    env.build("(defrule do => (assert (foo zap)))")
+    assert 1, env.run
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 4, facts.length
+    env.reset
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 3, facts.length
+    assert 1, env.run
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 4, facts.length
+  end
+
+  def test_slot_names
+    env = CLIPS.create_environment
+    assert_nil env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    assert_equal [ :foo, :bar ],
+      env.assert_hash(:"my-template", foo: :asdf, bar: [ 1, 2, "hjkl" ]).slot_names
+  end
+
+  def test_get_slot
+    env = CLIPS.create_environment
+    assert_nil env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    fact = env.assert_hash(:"my-template", foo: :asdf, bar: [ 1, 2, "hjkl" ])
+    assert_equal :asdf,
+      fact.get_slot(:foo)
+    assert_equal [ 1, 2, "hjkl" ],
+      fact.get_slot('bar')
+  end
+
+  def test_retract
+    env = CLIPS.create_environment
+    fact = env.assert_string("(bar 1 2)")
+    facts = env.find_all_facts("(?f bar)")
+    assert_equal 1, facts.length
+    assert fact.retract
+    facts = env.find_all_facts("(?f bar)")
+    assert_equal 0, facts.length
+  end
 end
