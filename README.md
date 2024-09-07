@@ -215,6 +215,16 @@ CLIPS::Environment::Fact.to_h(fact)
 fact.to_h
 ```
 
+### `CLIPS::Environment::Fact.index`
+### `CLIPS::Environment::Fact#index`
+
+Returns the index of the fact in working memory
+
+```ruby
+CLIPS::Environment::Fact.index
+fact.index
+```
+
 ### `CLIPS::Environment::Fact.deftemplate_name`
 ### `CLIPS::Environment::Fact#deftemplate_name`
 
