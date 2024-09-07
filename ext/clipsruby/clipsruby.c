@@ -642,6 +642,32 @@ static VALUE clips_environment_static_eval(VALUE self, VALUE rbEnvironment, VALU
 	return clips_environment_eval(rbEnvironment, string);
 }
 
+static VALUE clips_environment_find_fact(int argc, VALUE *argv, VALUE environment) {
+	VALUE fact_set_template, query;
+
+	rb_scan_args(argc, argv, "11", &fact_set_template, &query);
+	if (NIL_P(query)) {
+		query = rb_str_new_cstr("TRUE");
+	}
+
+	return clips_environment_eval(
+		environment,
+		rb_sprintf("(find-fact (%s) %s)", StringValueCStr(fact_set_template), StringValueCStr(query)));
+}
+
+static VALUE clips_environment_static_find_fact(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, fact_set_template, query;
+
+	rb_scan_args(argc, argv, "21", &rbEnvironment, &fact_set_template, &query);
+	if (NIL_P(query)) {
+		query = rb_str_new_cstr("TRUE");
+	}
+
+	return clips_environment_eval(
+		rbEnvironment,
+		rb_sprintf("(find-fact (%s) %s)", StringValueCStr(fact_set_template), StringValueCStr(query)));
+}
+
 static VALUE clips_environment_find_all_facts(int argc, VALUE *argv, VALUE environment) {
 	VALUE fact_set_template, query;
 
@@ -747,6 +773,117 @@ static VALUE clips_environment_static_reset(VALUE self, VALUE rbEnvironment)
 	return clips_environment_reset(rbEnvironment);
 }
 
+static VALUE clips_environment_save(VALUE self, VALUE path)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	if (Save(env, StringValueCStr(path))) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_static_save(VALUE self, VALUE rbEnvironment, VALUE path)
+{
+	return clips_environment_save(rbEnvironment, path);
+}
+
+static VALUE clips_environment_load(VALUE self, VALUE path)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch (Load(env, StringValueCStr(path)))
+	{
+		case LE_NO_ERROR:
+			break;
+		case LE_OPEN_FILE_ERROR:
+			rb_warn("could not load: issue opening file.");
+			return Qnil;
+		case LE_PARSING_ERROR:
+			rb_warn("could not load: parsing issue.");
+			return Qnil;
+	}
+	return Qtrue;
+}
+
+static VALUE clips_environment_static_load(VALUE self, VALUE rbEnvironment, VALUE path)
+{
+	return clips_environment_load(rbEnvironment, path);
+}
+
+static VALUE clips_environment_save_facts(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE path, scope;
+	Environment *env;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "11", &path, &scope);
+	if (NIL_P(scope)) {
+		scope = ID2SYM(rb_intern("local"));
+	}
+
+	int number_of_facts_saved;
+
+	if (scope == ID2SYM(rb_intern("visible"))) {
+		number_of_facts_saved = SaveFacts(env, StringValueCStr(path), VISIBLE_SAVE);
+	} else if (scope == ID2SYM(rb_intern("local"))) {
+		number_of_facts_saved = SaveFacts(env, StringValueCStr(path), LOCAL_SAVE);
+	} else {
+		rb_warn("could not bsave_facts: unsupported scope.");
+		return Qnil;
+	}
+	return INT2NUM(number_of_facts_saved);
+}
+
+static VALUE clips_environment_static_save_facts(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, path, scope;
+	Environment *env;
+
+	rb_scan_args(argc, argv, "21", &rbEnvironment, &path, &scope);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	if (NIL_P(scope)) {
+		scope = ID2SYM(rb_intern("local"));
+	}
+
+	int number_of_facts_saved;
+
+	if (scope == ID2SYM(rb_intern("visible"))) {
+		number_of_facts_saved = SaveFacts(env, StringValueCStr(path), VISIBLE_SAVE);
+	} else if (scope == ID2SYM(rb_intern("local"))) {
+		number_of_facts_saved = SaveFacts(env, StringValueCStr(path), LOCAL_SAVE);
+	} else {
+		rb_warn("could not bsave_facts: unsupported scope.");
+		return Qnil;
+	}
+	return INT2NUM(number_of_facts_saved);
+}
+
+static VALUE clips_environment_load_facts(VALUE self, VALUE path)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+	int number_of_facts_loaded = LoadFacts(env, StringValueCStr(path));
+
+	if (number_of_facts_loaded == -1) {
+		return Qnil;
+	} else {
+		return INT2NUM(number_of_facts_loaded);
+	}
+}
+
+static VALUE clips_environment_static_load_facts(VALUE self, VALUE rbEnvironment, VALUE path)
+{
+	return clips_environment_load_facts(rbEnvironment, path);
+}
+
 static VALUE clips_environment_bsave(VALUE self, VALUE path)
 {
 	Environment *env;
@@ -794,14 +931,18 @@ static VALUE clips_environment_bsave_facts(int argc, VALUE *argv, VALUE rbEnviro
 		scope = ID2SYM(rb_intern("local"));
 	}
 
+	int number_of_facts_saved;
+
 	if (scope == ID2SYM(rb_intern("visible"))) {
-		return INT2NUM(BinarySaveFacts(env, StringValueCStr(path), VISIBLE_SAVE));
+		number_of_facts_saved = BinarySaveFacts(env, StringValueCStr(path), VISIBLE_SAVE);
 	} else if (scope == ID2SYM(rb_intern("local"))) {
-		return INT2NUM(BinarySaveFacts(env, StringValueCStr(path), LOCAL_SAVE));
+		number_of_facts_saved = BinarySaveFacts(env, StringValueCStr(path), LOCAL_SAVE);
 	} else {
 		rb_warn("could not bsave_facts: unsupported scope.");
 		return Qnil;
 	}
+
+	return INT2NUM(number_of_facts_saved);
 }
 
 static VALUE clips_environment_static_bsave_facts(int argc, VALUE *argv, VALUE klass) {
@@ -1048,6 +1189,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "run", clips_environment_run, -1);
 	rb_define_singleton_method(rbEnvironment, "_eval", clips_environment_static_eval, 2);
 	rb_define_method(rbEnvironment, "_eval", clips_environment_eval, 1);
+	rb_define_singleton_method(rbEnvironment, "find_fact", clips_environment_static_find_fact, -1);
+	rb_define_method(rbEnvironment, "find_fact", clips_environment_find_fact, -1);
 	rb_define_singleton_method(rbEnvironment, "find_all_facts", clips_environment_static_find_all_facts, -1);
 	rb_define_method(rbEnvironment, "find_all_facts", clips_environment_find_all_facts, -1);
 	rb_define_singleton_method(rbEnvironment, "batch_star", clips_environment_static_batch_star, 2);
@@ -1056,6 +1199,14 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "clear", clips_environment_clear, 0);
 	rb_define_singleton_method(rbEnvironment, "reset", clips_environment_static_reset, 1);
 	rb_define_method(rbEnvironment, "reset", clips_environment_reset, 0);
+	rb_define_singleton_method(rbEnvironment, "save", clips_environment_static_save, 2);
+	rb_define_method(rbEnvironment, "save", clips_environment_save, 1);
+	rb_define_singleton_method(rbEnvironment, "load", clips_environment_static_load, 2);
+	rb_define_method(rbEnvironment, "load", clips_environment_load, 1);
+	rb_define_singleton_method(rbEnvironment, "save_facts", clips_environment_static_save_facts, -1);
+	rb_define_method(rbEnvironment, "save_facts", clips_environment_save_facts, -1);
+	rb_define_singleton_method(rbEnvironment, "load_facts", clips_environment_static_load_facts, 2);
+	rb_define_method(rbEnvironment, "load_facts", clips_environment_load_facts, 1);
 	rb_define_singleton_method(rbEnvironment, "bsave", clips_environment_static_bsave, 2);
 	rb_define_method(rbEnvironment, "bsave", clips_environment_bsave, 1);
 	rb_define_singleton_method(rbEnvironment, "bload", clips_environment_static_bload, 2);

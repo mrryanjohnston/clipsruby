@@ -25,6 +25,24 @@ class ClipsrubyTest < Minitest::Test
     assert_equal(:"my-template", fact.deftemplate_name)
   end
 
+  def test_assert_string_find_fact
+    env = CLIPS.create_environment
+    fact1 = env.assert_string("(foo bar baz)")
+    fact2 = env.assert_string("(bar baz 1)")
+    env.assert_string("(bar baz 2)")
+    env.assert_string("(bar baz 3)")
+    facts = env.find_all_facts("(?f foo) (?b bar)", "(eq (nth$ 2 ?f:implied) (nth$ 1 ?b:implied))")
+    assert_equal 6, facts.length
+    facts = env.find_fact("(?f foo) (?b bar)", "(eq (nth$ 2 ?f:implied) (nth$ 1 ?b:implied))")
+    assert_equal 2, facts.length
+    assert_equal([{ implied: [ :bar, :baz ] }, { implied: [ :baz, 1 ] }],
+      facts.map(&:to_h))
+    assert_equal(fact1.to_h,
+      facts[0].to_h)
+    assert_equal(fact2.to_h,
+      facts[1].to_h)
+  end
+
   def test_assert_string_find_all_facts
     env = CLIPS.create_environment
     fact = env.assert_string("(foo bar baz)")
@@ -93,6 +111,41 @@ class ClipsrubyTest < Minitest::Test
     assert 1, env.run
     facts = env.find_all_facts("(?f foo)")
     assert_equal 4, facts.length
+  end
+
+  def test_save_load
+    env = CLIPS.create_environment
+    env.build("(defrule do => (assert (foo zap)))")
+    env.save("test/load.clp")
+    env.clear
+    refute env.load("test/file_does_not_exist.bat")
+    assert env.load("test/load.clp")
+    env.reset
+    assert_equal 1, env.run
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 1, facts.length
+
+    env = CLIPS.create_environment
+    assert env.load("test/load.clp")
+    env.reset
+    assert_equal 1, env.run
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 1, facts.length
+  end
+
+  def test_save_facts_load_facts
+    env = CLIPS.create_environment
+    env.assert_string("(foo bar baz)")
+    env.assert_string("(bar 1 2)")
+    env.assert_string("(bar \"asdf\")")
+    env.save_facts("test/load_facts.clp")
+    env.clear
+    refute env.load_facts("test/file_does_not_exist.bat")
+    assert env.load_facts("test/load_facts.clp")
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 1, facts.length
+    facts = env.find_all_facts("(?f bar)")
+    assert_equal 2, facts.length
   end
 
   def test_bsave_bload
