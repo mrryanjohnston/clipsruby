@@ -221,7 +221,7 @@ fact.to_h
 Returns the index of the fact in working memory
 
 ```ruby
-CLIPS::Environment::Fact.index
+CLIPS::Environment::Fact.index(fact)
 fact.index
 ```
 
