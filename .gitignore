@@ -2,3 +2,4 @@ lib/clipsruby/clipsruby.so
 tmp/
 *.gem
 *.swp
+test/*.bin

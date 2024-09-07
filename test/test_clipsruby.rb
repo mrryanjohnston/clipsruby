@@ -95,6 +95,41 @@ class ClipsrubyTest < Minitest::Test
     assert_equal 4, facts.length
   end
 
+  def test_bsave_bload
+    env = CLIPS.create_environment
+    env.build("(defrule do => (assert (foo zap)))")
+    env.bsave("test/bload.bin")
+    env.clear
+    refute env.bload("test/file_does_not_exist.bat")
+    assert env.bload("test/bload.bin")
+    env.reset
+    assert_equal 1, env.run
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 1, facts.length
+
+    env = CLIPS.create_environment
+    assert env.bload("test/bload.bin")
+    env.reset
+    assert_equal 1, env.run
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 1, facts.length
+  end
+
+  def test_bsave_facts_bload_facts
+    env = CLIPS.create_environment
+    env.assert_string("(foo bar baz)")
+    env.assert_string("(bar 1 2)")
+    env.assert_string("(bar \"asdf\")")
+    env.bsave_facts("test/bload_facts.bin")
+    env.clear
+    refute env.bload_facts("test/file_does_not_exist.bat")
+    assert env.bload_facts("test/bload_facts.bin")
+    facts = env.find_all_facts("(?f foo)")
+    assert_equal 1, facts.length
+    facts = env.find_all_facts("(?f bar)")
+    assert_equal 2, facts.length
+  end
+
   def test_slot_names
     env = CLIPS.create_environment
     assert_nil env.build("(deftemplate my-template (slot foo) (multislot bar))")
@@ -140,5 +175,12 @@ class ClipsrubyTest < Minitest::Test
       fact.get_slot('foo')
     facts = env.find_all_facts("(?f my-template)")
     assert_equal 1, facts.length
+  end
+
+  def test_index
+    env = CLIPS.create_environment
+    assert_equal 1, env.assert_string("(foo bar baz)").index
+    assert_equal 2, env.assert_string("(bar 1 2)").index
+    assert_equal 3, env.assert_string("(baz \"asdf\")").index
   end
 end
