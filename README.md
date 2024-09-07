@@ -39,6 +39,54 @@ CLIPS::Environment.batch_star(env, "./my-batch.bat")
 env.batch_star("./my-batch.bat")
 ```
 
+### `CLIPS::Environment.save`
+### `env.save`
+
+Pass the path in which we'll save the environment constructs.
+
+```ruby
+CLIPS::Environment.save(env, "./my-save.bin")
+env.save("./my-save.bin")
+```
+
+### `CLIPS::Environment.load`
+### `env.load`
+
+Pass the path to a file that will load the constructs stored in the file
+into the environment. Remember to `reset` the environment if you need.
+
+```ruby
+CLIPS::Environment.load(env, "./my-load.bin")
+env.load("./my-load.bin")
+```
+
+### `CLIPS::Environment.save_facts`
+### `env.save_facts`
+
+Pass the path in which we'll save the environment facts.
+The third argument is optional, and determines whether to store the visible or local facts.
+By default, it'll store local.
+
+```ruby
+CLIPS::Environment.save_facts(env, "./my-save-facts.bin")
+env.save_facts("./my-save-facts.bin")
+CLIPS::Environment.save_facts(env, "./my-save-facts.bin", :local)
+env.save_facts("./my-save-facts.bin", :local)
+CLIPS::Environment.save_facts(env, "./my-save-facts.bin", :visible)
+env.save_facts("./my-save-facts.bin", :visible)
+```
+
+### `CLIPS::Environment.load_facts`
+### `env.load_facts`
+
+Pass the path to a file that will load the facts stored in the file
+into the environment.
+
+```ruby
+CLIPS::Environment.load_facts(env, "./my-load-facts.bin")
+env.load_facts("./my-load-facts.bin")
+```
+
 ### `CLIPS::Environment.bsave`
 ### `env.bsave`
 
@@ -68,12 +116,12 @@ The third argument is optional, and determines whether to store the visible or l
 By default, it'll store local.
 
 ```ruby
-CLIPS::Environment.bsave(env, "./my-bsave-facts.bin")
-env.bsave("./my-bsave-facts.bin")
-CLIPS::Environment.bsave(env, "./my-bsave-facts.bin", :local)
-env.bsave("./my-bsave-facts.bin", :local)
-CLIPS::Environment.bsave(env, "./my-bsave-facts.bin", :visible)
-env.bsave("./my-bsave-facts.bin", :visible)
+CLIPS::Environment.bsave_facts(env, "./my-bsave-facts.bin")
+env.bsave_facts("./my-bsave-facts.bin")
+CLIPS::Environment.bsave_facts(env, "./my-bsave-facts.bin", :local)
+env.bsave_facts("./my-bsave-facts.bin", :local)
+CLIPS::Environment.bsave_facts(env, "./my-bsave-facts.bin", :visible)
+env.bsave_facts("./my-bsave-facts.bin", :visible)
 ```
 
 ### `CLIPS::Environment.bload_facts`
@@ -83,8 +131,8 @@ Pass the path to a binary file that will load the facts stored in the file
 into the environment.
 
 ```ruby
-CLIPS::Environment.bload(env, "./my-bload-facts.bin")
-env.bload("./my-bload-facts.bin")
+CLIPS::Environment.bload_facts(env, "./my-bload-facts.bin")
+env.bload_facts("./my-bload-facts.bin")
 ```
 
 ### `CLIPS::Environment.assert_string`
