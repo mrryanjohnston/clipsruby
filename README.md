@@ -162,7 +162,7 @@ A light wrapper around the CLIPS find-fact function. Accepts a fact set template
 returns the first Facts in the environment that match as Ruby objects.
 
 ```ruby
-CLIPS::Environment.find_facts(env, "(?f my_deftemplate)")
+CLIPS::Environment.find_fact(env, "(?f my_deftemplate)")
 env.find_fact("(?f my_deftemplate)")
 CLIPS::Environment.find_fact(env, "(?f my_deftemplate)", "(eq ?f:b \"asdf\")")
 env.find_fact("(?f my_deftemplate)", "(= ?f:a 1)")
@@ -492,6 +492,36 @@ Return an array of Facts with deftemplates in the Defmodule
 ```ruby
 CLIPS::Environment::Defmodule.get_fact_list(defmodule)
 defmodule.get_fact_list
+```
+
+### `CLIPS::Environment.find_deftemplate`
+### `CLIPS::Environment#find_deftemplate`
+
+Finds a deftemplate by name and returns a CLIPS::Environment::Deftemplate object
+
+```ruby
+CLIPS::Environment.find_deftemplate(:a)
+env.find_deftemplate("foo")
+```
+
+### `CLIPS::Environment::Deftemplate.name`
+### `CLIPS::Environment::Deftemplate#name`
+
+Returns the name of a deftemplate as a symbol
+
+```ruby
+CLIPS::Environment::Deftemplate.name(deftemplate)
+deftemplate.name
+```
+
+### `CLIPS::Environment::Deftemplate.pp_form`
+### `CLIPS::Environment::Deftemplate#pp_form`
+
+Returns a pretty printed string representation of the Deftemplate
+
+```ruby
+CLIPS::Environment::Deftemplate.pp_form(deftemplate)
+deftemplate.pp_form
 ```
 
 ## Running the tests
