@@ -1,6 +1,19 @@
 #include "clips.h"
 #include "ruby.h"
 
+size_t defmodule_size(const void *data)
+{
+	return sizeof(Defmodule);
+}
+
+static const rb_data_type_t Defmodule_type = {
+	.function = {
+		.dsize = defmodule_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
+
 size_t defrule_size(const void *data)
 {
 	return sizeof(Defrule);
@@ -71,6 +84,21 @@ static VALUE clips_environment_facts(VALUE self)
 static VALUE clips_environment_static_facts(VALUE self, VALUE rbEnvironment)
 {
 	return clips_environment_facts(rbEnvironment);
+}
+
+VALUE defmodule_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Defmodule_type, NULL);
+}
+
+VALUE defrule_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Defrule_type, NULL);
+}
+
+VALUE fact_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Fact_type, NULL);
 }
 
 VALUE environment_alloc(VALUE self)
@@ -1210,6 +1238,65 @@ static VALUE clips_environment_static_find_defrule(VALUE self, VALUE rbEnvironme
 	return clips_environment_find_defrule(rbEnvironment, defrule_name);
 }
 
+static VALUE clips_environment_find_defmodule(VALUE self, VALUE defmodule_name)
+{
+	Environment *env;
+	Defmodule *module;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch (TYPE(defmodule_name)) {
+		case T_STRING:
+			module = FindDefmodule(env, StringValueCStr(defmodule_name));
+			break;
+		case T_SYMBOL:
+			module = FindDefmodule(env, rb_id2name(SYM2ID(defmodule_name)));
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+
+	if (module == NULL) {
+		return Qnil;
+	} else {
+		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Defmodule")), &Defmodule_type, module);
+	}
+}
+
+static VALUE clips_environment_static_find_defmodule(VALUE self, VALUE rbEnvironment, VALUE defmodule_name)
+{
+	return clips_environment_find_defmodule(rbEnvironment, defmodule_name);
+}
+
+static VALUE clips_environment_defmodule_name(VALUE self)
+{
+	Defmodule *defmodule;
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, defmodule);
+
+	return ID2SYM(rb_intern(DefmoduleName(defmodule)));
+}
+
+static VALUE clips_environment_defmodule_static_name(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_name(rbDefmodule);
+}
+
+static VALUE clips_environment_defmodule_pp_form(VALUE self)
+{
+	Defmodule *defmodule;
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, defmodule);
+
+	return rb_str_new2(DefmodulePPForm(defmodule));
+}
+
+static VALUE clips_environment_defmodule_static_pp_form(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_pp_form(rbDefmodule);
+}
+
 static VALUE clips_environment_defrule_name(VALUE self)
 {
 	Defrule *defrule;
@@ -1357,8 +1444,18 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "bload_facts", clips_environment_bload_facts, 1);
 	rb_define_singleton_method(rbEnvironment, "find_defrule", clips_environment_static_find_defrule, 2);
 	rb_define_method(rbEnvironment, "find_defrule", clips_environment_find_defrule, 1);
+	rb_define_singleton_method(rbEnvironment, "find_defmodule", clips_environment_static_find_defmodule, 2);
+	rb_define_method(rbEnvironment, "find_defmodule", clips_environment_find_defmodule, 1);
+
+	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
+	rb_define_alloc_func(rbDefmodule, defmodule_alloc);
+	rb_define_singleton_method(rbDefmodule, "name", clips_environment_defmodule_static_name, 1);
+	rb_define_method(rbDefmodule, "name", clips_environment_defmodule_name, 0);
+	rb_define_singleton_method(rbDefmodule, "pp_form", clips_environment_defmodule_static_pp_form, 1);
+	rb_define_method(rbDefmodule, "pp_form", clips_environment_defmodule_pp_form, 0);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
+	rb_define_alloc_func(rbFact, fact_alloc);
 	rb_define_singleton_method(rbFact, "deftemplate_name", clips_environment_fact_static_deftemplate_name, 1);
 	rb_define_method(rbFact, "deftemplate_name", clips_environment_fact_deftemplate_name, 0);
 	rb_define_singleton_method(rbFact, "to_h", clips_environment_fact_static_to_h, 1);
@@ -1375,6 +1472,7 @@ void Init_clipsruby(void)
 	rb_define_method(rbFact, "index", clips_environment_fact_index, 0);
 
 	VALUE rbDefrule = rb_define_class_under(rbEnvironment, "Defrule", rb_cObject);
+	rb_define_alloc_func(rbDefrule, defrule_alloc);
 	rb_define_singleton_method(rbDefrule, "name", clips_environment_defrule_static_name, 1);
 	rb_define_method(rbDefrule, "name", clips_environment_defrule_name, 0);
 	rb_define_singleton_method(rbDefrule, "pp_form", clips_environment_defrule_static_pp_form, 1);

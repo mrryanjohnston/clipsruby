@@ -408,6 +408,36 @@ CLIPS::Environment::Defrule.remove_break(defrule)
 defrule.remove_break
 ```
 
+### `CLIPS::Environment.find_defmodule`
+### `CLIPS::Environment#find_defmodule`
+
+Finds a defmodule by name and returns a CLIPS::Environment::Defmodule object
+
+```ruby
+CLIPS::Environment.find_defmodule(:a)
+env.find_defmodule("foo")
+```
+
+### `CLIPS::Environment::Defmodule.name`
+### `CLIPS::Environment::Defmodule#name`
+
+Returns the name of a defmodule as a symbol
+
+```ruby
+CLIPS::Environment::Defmodule.name(defmodule)
+defmodule.name
+```
+
+### `CLIPS::Environment::Defmodule.pp_form`
+### `CLIPS::Environment::Defmodule#pp_form`
+
+Returns a pretty printed string representation of the Defmodule
+
+```ruby
+CLIPS::Environment::Defmodule.pp_form(defmodule)
+defmodule.pp_form
+```
+
 ## Running the tests
 
 Simply do `rake compile` and then `rake test` in order to run the tests.

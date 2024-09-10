@@ -274,4 +274,22 @@ class ClipsrubyTest < Minitest::Test
     assert defrule.remove_break
     refute defrule.has_breakpoint
   end
+
+  def test_find_defmodule_name
+    env = CLIPS.create_environment
+    assert_nil env.find_defmodule(:does_not_exist)
+    env.build("(defmodule my_module (export ?ALL))")
+    env.build("(defmodule also-my-module (export ?ALL))")
+    assert_equal :my_module,
+      env.find_defmodule(:my_module).name
+    assert_equal :"also-my-module",
+      env.find_defmodule(:"also-my-module").name
+  end
+
+  def test_find_defmodule_pp_form
+    env = CLIPS.create_environment
+    env.build("(defmodule my_module (export ?ALL))")
+    assert_equal "(defmodule my_module\n   (export ?ALL))\n",
+      env.find_defmodule(:my_module).pp_form
+  end
 end
