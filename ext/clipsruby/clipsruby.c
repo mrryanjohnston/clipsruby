@@ -1238,6 +1238,51 @@ static VALUE clips_environment_static_find_defrule(VALUE self, VALUE rbEnvironme
 	return clips_environment_find_defrule(rbEnvironment, defrule_name);
 }
 
+static VALUE clips_environment_get_current_module(VALUE self)
+{
+	Environment *env;
+	Defmodule *module;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+	module = GetCurrentModule(env);
+
+	if (module == NULL) {
+		return Qnil;
+	} else {
+		VALUE rbDefmodule;
+		rbDefmodule = TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Defmodule")), &Defmodule_type, module);
+		rb_iv_set(rbDefmodule, "@environment", self);
+		return rbDefmodule;
+	}
+}
+
+static VALUE clips_environment_static_get_current_module(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_get_current_module(rbEnvironment);
+}
+
+static VALUE clips_environment_set_current_module(VALUE self, VALUE rbDefmodule)
+{
+	Environment *env;
+	Defmodule *module, *returnModule;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+	TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, module);
+
+	returnModule = SetCurrentModule(env, module);
+
+	if (module != returnModule) {
+		return Qnil;
+	} else {
+		return rbDefmodule;
+	}
+}
+
+static VALUE clips_environment_static_set_current_module(VALUE self, VALUE rbEnvironment, VALUE defmodule_name)
+{
+	return clips_environment_set_current_module(rbEnvironment, defmodule_name);
+}
+
 static VALUE clips_environment_find_defmodule(VALUE self, VALUE defmodule_name)
 {
 	Environment *env;
@@ -1260,7 +1305,10 @@ static VALUE clips_environment_find_defmodule(VALUE self, VALUE defmodule_name)
 	if (module == NULL) {
 		return Qnil;
 	} else {
-		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Defmodule")), &Defmodule_type, module);
+		VALUE rbDefmodule;
+		rbDefmodule = TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Defmodule")), &Defmodule_type, module);
+		rb_iv_set(rbDefmodule, "@environment", self);
+		return rbDefmodule;
 	}
 }
 
@@ -1295,6 +1343,30 @@ static VALUE clips_environment_defmodule_pp_form(VALUE self)
 static VALUE clips_environment_defmodule_static_pp_form(VALUE self, VALUE rbDefmodule)
 {
 	return clips_environment_defmodule_pp_form(rbDefmodule);
+}
+
+static VALUE clips_environment_defmodule_set_current(VALUE self)
+{
+	Defmodule *module, *returnModule;
+	Environment *env;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	returnModule = SetCurrentModule(env, module);
+
+	if (module != returnModule) {
+		return Qnil;
+	} else {
+		return self;
+	}
+}
+
+static VALUE clips_environment_defmodule_static_set_current(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_set_current(rbDefmodule);
 }
 
 static VALUE clips_environment_defrule_name(VALUE self)
@@ -1446,6 +1518,10 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "find_defrule", clips_environment_find_defrule, 1);
 	rb_define_singleton_method(rbEnvironment, "find_defmodule", clips_environment_static_find_defmodule, 2);
 	rb_define_method(rbEnvironment, "find_defmodule", clips_environment_find_defmodule, 1);
+	rb_define_singleton_method(rbEnvironment, "get_current_module", clips_environment_static_get_current_module, 1);
+	rb_define_method(rbEnvironment, "get_current_module", clips_environment_get_current_module, 0);
+	rb_define_singleton_method(rbEnvironment, "set_current_module", clips_environment_static_set_current_module, 2);
+	rb_define_method(rbEnvironment, "set_current_module", clips_environment_set_current_module, 1);
 
 	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
 	rb_define_alloc_func(rbDefmodule, defmodule_alloc);
@@ -1453,6 +1529,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefmodule, "name", clips_environment_defmodule_name, 0);
 	rb_define_singleton_method(rbDefmodule, "pp_form", clips_environment_defmodule_static_pp_form, 1);
 	rb_define_method(rbDefmodule, "pp_form", clips_environment_defmodule_pp_form, 0);
+	rb_define_singleton_method(rbDefmodule, "set_current", clips_environment_defmodule_static_set_current, 1);
+	rb_define_method(rbDefmodule, "set_current", clips_environment_defmodule_set_current, 0);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_alloc_func(rbFact, fact_alloc);

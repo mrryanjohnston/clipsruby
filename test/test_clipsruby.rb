@@ -292,4 +292,26 @@ class ClipsrubyTest < Minitest::Test
     assert_equal "(defmodule my_module\n   (export ?ALL))\n",
       env.find_defmodule(:my_module).pp_form
   end
+
+  def test_get_current_module_set_current_module
+    env = CLIPS.create_environment
+    assert_equal :MAIN,
+      env.get_current_module.name
+    env.build("(defmodule my_module (export ?ALL))")
+    defmodule = env.find_defmodule(:my_module)
+    assert_equal defmodule,
+      env.set_current_module(defmodule)
+    assert_equal :my_module,
+      env.get_current_module.name
+  end
+
+  def test_defmodule_set_current
+    env = CLIPS.create_environment
+    env.build("(defmodule my_module (export ?ALL))")
+    defmodule = env.find_defmodule(:my_module)
+    assert_equal defmodule,
+      defmodule.set_current
+    assert_equal :my_module,
+      env.get_current_module.name
+  end
 end

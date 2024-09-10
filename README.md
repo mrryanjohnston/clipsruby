@@ -266,6 +266,26 @@ CLIPS::Environment.facts(env)
 env.facts
 ```
 
+### `CLIPS::Environment.get_current_module`
+### `CLIPS::Environment#get_current_module`
+
+Get the current module in the CLIPS environment
+
+```ruby
+CLIPS::Environment.get_current_module(env)
+env.get_current_module
+```
+
+### `CLIPS::Environment.set_current_module`
+### `CLIPS::Environment#set_current_module`
+
+Set the current module in the CLIPS environment
+
+```ruby
+CLIPS::Environment.set_current_module(env, defmodule) 
+env.set_current_module(defmodule)
+```
+
 ### `CLIPS::Environment::Fact.to_h`
 ### `CLIPS::Environment::Fact#to_h`
 
@@ -436,6 +456,16 @@ Returns a pretty printed string representation of the Defmodule
 ```ruby
 CLIPS::Environment::Defmodule.pp_form(defmodule)
 defmodule.pp_form
+```
+
+### `CLIPS::Environment::Defmodule.set_current`
+### `CLIPS::Environment::Defmodule#set_current`
+
+Sets the Defmodule as the current module of the environment
+
+```ruby
+CLIPS::Environment::Defmodule.set_current(defmodule)
+defmodule.set_current
 ```
 
 ## Running the tests
