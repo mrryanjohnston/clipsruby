@@ -378,6 +378,36 @@ CLIPS::Environment::Defrule.pp_form(defrule)
 defrule.pp_form
 ```
 
+### `CLIPS::Environment::Defrule.has_breakpoint`
+### `CLIPS::Environment::Defrule#has_breakpoint`
+
+Returns whether or not the rule has a breakpoint set
+
+```ruby
+CLIPS::Environment::Defrule.has_breakpoint(defrule)
+defrule.has_breakpoint
+```
+
+### `CLIPS::Environment::Defrule.set_break`
+### `CLIPS::Environment::Defrule#set_break`
+
+Sets a breakpoint on a rule
+
+```ruby
+CLIPS::Environment::Defrule.set_break(defrule)
+defrule.set_break
+```
+
+### `CLIPS::Environment::Defrule.remove_break`
+### `CLIPS::Environment::Defrule#remove_break`
+
+Returns whether or not it was able to remove a breakpoint from a rule
+
+```ruby
+CLIPS::Environment::Defrule.remove_break(defrule)
+defrule.remove_break
+```
+
 ## Running the tests
 
 Simply do `rake compile` and then `rake test` in order to run the tests.

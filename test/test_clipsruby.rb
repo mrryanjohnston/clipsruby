@@ -262,4 +262,16 @@ class ClipsrubyTest < Minitest::Test
     env.build("(defrule a =>)")
     assert env.find_defrule(:a).is_deletable
   end
+
+  def test_has_breakpoint_set_break_remove_break
+    env = CLIPS.create_environment
+    env.build("(defrule a =>)")
+    defrule = env.find_defrule(:a)
+    refute defrule.has_breakpoint
+    refute defrule.remove_break
+    defrule.set_break
+    assert defrule.has_breakpoint
+    assert defrule.remove_break
+    refute defrule.has_breakpoint
+  end
 end

@@ -1256,6 +1256,58 @@ static VALUE clips_environment_defrule_static_is_deletable(VALUE self, VALUE rbD
 	return clips_environment_defrule_is_deletable(rbDefrule);
 }
 
+static VALUE clips_environment_defrule_has_breakpoint(VALUE self)
+{
+	Defrule *defrule;
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, defrule);
+
+	if (DefruleHasBreakpoint(defrule)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_defrule_static_has_breakpoint(VALUE self, VALUE rbDefrule)
+{
+	return clips_environment_defrule_has_breakpoint(rbDefrule);
+}
+
+static VALUE clips_environment_defrule_set_break(VALUE self)
+{
+	Defrule *defrule;
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, defrule);
+
+	SetBreak(defrule);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_defrule_static_set_break(VALUE self, VALUE rbDefrule)
+{
+	return clips_environment_defrule_set_break(rbDefrule);
+}
+
+static VALUE clips_environment_defrule_remove_break(VALUE self)
+{
+	Defrule *defrule;
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, defrule);
+
+	if (RemoveBreak(defrule)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_defrule_static_remove_break(VALUE self, VALUE rbDefrule)
+{
+	return clips_environment_defrule_remove_break(rbDefrule);
+}
+
 void Init_clipsruby(void)
 {
 	VALUE rbCLIPS = rb_define_module("CLIPS");
@@ -1329,6 +1381,12 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefrule, "pp_form", clips_environment_defrule_pp_form, 0);
 	rb_define_singleton_method(rbDefrule, "is_deletable", clips_environment_defrule_static_is_deletable, 1);
 	rb_define_method(rbDefrule, "is_deletable", clips_environment_defrule_is_deletable, 0);
+	rb_define_singleton_method(rbDefrule, "has_breakpoint", clips_environment_defrule_static_has_breakpoint, 1);
+	rb_define_method(rbDefrule, "has_breakpoint", clips_environment_defrule_has_breakpoint, 0);
+	rb_define_singleton_method(rbDefrule, "set_break", clips_environment_defrule_static_set_break, 1);
+	rb_define_method(rbDefrule, "set_break", clips_environment_defrule_set_break, 0);
+	rb_define_singleton_method(rbDefrule, "remove_break", clips_environment_defrule_static_remove_break, 1);
+	rb_define_method(rbDefrule, "remove_break", clips_environment_defrule_remove_break, 0);
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 }
