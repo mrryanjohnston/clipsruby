@@ -236,4 +236,30 @@ class ClipsrubyTest < Minitest::Test
     assert_equal 2, env.assert_string("(bar 1 2)").index
     assert_equal 3, env.assert_string("(baz \"asdf\")").index
   end
+
+  def test_find_defrule_name
+    env = CLIPS.create_environment
+    env.build("(defrule runs-once =>)")
+    env.build("(defrule runs-once-also =>)")
+    assert_equal :"runs-once",
+      env.find_defrule(:"runs-once").name
+    assert_equal :"runs-once-also",
+      env.find_defrule(:"runs-once-also").name
+  end
+
+  def test_defrule_pp_form
+    env = CLIPS.create_environment
+    env.build("(defrule a =>)")
+    assert_equal "(defrule MAIN::a\n   =>)\n",
+      env.find_defrule(:a).pp_form
+    env.build("(defrule foo (asdf ?asdf) => (println \"It says: \" ?asdf))")
+    assert_equal "(defrule MAIN::foo\n   (asdf ?asdf)\n   =>\n   (println \"It says: \" ?asdf))\n",
+      env.find_defrule(:foo).pp_form
+  end
+
+  def test_defrule_is_deletable
+    env = CLIPS.create_environment
+    env.build("(defrule a =>)")
+    assert env.find_defrule(:a).is_deletable
+  end
 end

@@ -338,6 +338,46 @@ CLIPS::Environment::Fact.modify(fact, bar: 123)
 fact.modify(foo: "my new foo!")
 ```
 
+### `CLIPS::Environment.find_defrule`
+### `CLIPS::Environment#find_defrule`
+
+Finds a defrule by name and returns a CLIPS::Environment::Defrule object
+
+```ruby
+CLIPS::Environment.find_defrule(:a)
+env.find_defrule("foo")
+```
+
+### `CLIPS::Environment::Defrule.name`
+### `CLIPS::Environment::Defrule#name`
+
+Returns the name of a defrule as a symbol
+
+```ruby
+CLIPS::Environment::Defrule.name(defrule)
+defrule.name
+```
+
+### `CLIPS::Environment::Defrule.is_deletable`
+### `CLIPS::Environment::Defrule#is_deletable`
+
+Returns a boolean whether the Defrule is deletable or not
+
+```ruby
+CLIPS::Environment::Defrule.is_deletable(defrule)
+defrule.is_deletable
+```
+
+### `CLIPS::Environment::Defrule.pp_form`
+### `CLIPS::Environment::Defrule#pp_form`
+
+Returns a pretty printed string representation of the Defrule
+
+```ruby
+CLIPS::Environment::Defrule.pp_form(defrule)
+defrule.pp_form
+```
+
 ## Running the tests
 
 Simply do `rake compile` and then `rake test` in order to run the tests.

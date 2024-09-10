@@ -1,6 +1,18 @@
 #include "clips.h"
 #include "ruby.h"
 
+size_t defrule_size(const void *data)
+{
+	return sizeof(Defrule);
+}
+
+static const rb_data_type_t Defrule_type = {
+	.function = {
+		.dsize = defrule_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 size_t fact_size(const void *data)
 {
 	return sizeof(Fact);
@@ -1167,6 +1179,82 @@ static VALUE clips_environment_fact_static_index(VALUE self, VALUE rbFact)
 	return clips_environment_fact_index(rbFact);
 }
 
+static VALUE clips_environment_find_defrule(VALUE self, VALUE defrule_name)
+{
+	Environment *env;
+	Defrule *rule;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch (TYPE(defrule_name)) {
+		case T_STRING:
+			rule = FindDefrule(env, StringValueCStr(defrule_name));
+			break;
+		case T_SYMBOL:
+			rule = FindDefrule(env, rb_id2name(SYM2ID(defrule_name)));
+			break;
+                default:
+			rb_warn("defrule name must be a symbol or string");
+			return Qnil;
+        }
+
+	if (rule == NULL) {
+		return Qnil;
+	} else {
+		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Defrule")), &Defrule_type, rule);
+	}
+}
+
+static VALUE clips_environment_static_find_defrule(VALUE self, VALUE rbEnvironment, VALUE defrule_name)
+{
+	return clips_environment_find_defrule(rbEnvironment, defrule_name);
+}
+
+static VALUE clips_environment_defrule_name(VALUE self)
+{
+	Defrule *defrule;
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, defrule);
+
+	return ID2SYM(rb_intern(DefruleName(defrule)));
+}
+
+static VALUE clips_environment_defrule_static_name(VALUE self, VALUE rbDefrule)
+{
+	return clips_environment_defrule_name(rbDefrule);
+}
+
+static VALUE clips_environment_defrule_pp_form(VALUE self)
+{
+	Defrule *defrule;
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, defrule);
+
+	return rb_str_new2(DefrulePPForm(defrule));
+}
+
+static VALUE clips_environment_defrule_static_pp_form(VALUE self, VALUE rbDefrule)
+{
+	return clips_environment_defrule_pp_form(rbDefrule);
+}
+
+static VALUE clips_environment_defrule_is_deletable(VALUE self)
+{
+	Defrule *defrule;
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, defrule);
+
+	if (DefruleIsDeletable(defrule)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_defrule_static_is_deletable(VALUE self, VALUE rbDefrule)
+{
+	return clips_environment_defrule_is_deletable(rbDefrule);
+}
 
 void Init_clipsruby(void)
 {
@@ -1215,6 +1303,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "bsave_facts", clips_environment_bsave_facts, -1);
 	rb_define_singleton_method(rbEnvironment, "bload_facts", clips_environment_static_bload_facts, 2);
 	rb_define_method(rbEnvironment, "bload_facts", clips_environment_bload_facts, 1);
+	rb_define_singleton_method(rbEnvironment, "find_defrule", clips_environment_static_find_defrule, 2);
+	rb_define_method(rbEnvironment, "find_defrule", clips_environment_find_defrule, 1);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_singleton_method(rbFact, "deftemplate_name", clips_environment_fact_static_deftemplate_name, 1);
@@ -1231,6 +1321,14 @@ void Init_clipsruby(void)
 	rb_define_method(rbFact, "modify", clips_environment_fact_modify, 1);
 	rb_define_singleton_method(rbFact, "index", clips_environment_fact_static_index, 1);
 	rb_define_method(rbFact, "index", clips_environment_fact_index, 0);
+
+	VALUE rbDefrule = rb_define_class_under(rbEnvironment, "Defrule", rb_cObject);
+	rb_define_singleton_method(rbDefrule, "name", clips_environment_defrule_static_name, 1);
+	rb_define_method(rbDefrule, "name", clips_environment_defrule_name, 0);
+	rb_define_singleton_method(rbDefrule, "pp_form", clips_environment_defrule_static_pp_form, 1);
+	rb_define_method(rbDefrule, "pp_form", clips_environment_defrule_pp_form, 0);
+	rb_define_singleton_method(rbDefrule, "is_deletable", clips_environment_defrule_static_is_deletable, 1);
+	rb_define_method(rbDefrule, "is_deletable", clips_environment_defrule_is_deletable, 0);
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 }
