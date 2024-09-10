@@ -1,6 +1,18 @@
 #include "clips.h"
 #include "ruby.h"
 
+size_t deftemplate_size(const void *data)
+{
+	return sizeof(Deftemplate);
+}
+
+static const rb_data_type_t Deftemplate_type = {
+	.function = {
+		.dsize = deftemplate_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 size_t defmodule_size(const void *data)
 {
 	return sizeof(Defmodule);
@@ -89,6 +101,11 @@ static VALUE clips_environment_static_facts(VALUE self, VALUE rbEnvironment)
 VALUE defmodule_alloc(VALUE self)
 {
 	return TypedData_Wrap_Struct(self, &Defmodule_type, NULL);
+}
+
+VALUE deftemplate_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Deftemplate_type, NULL);
 }
 
 VALUE defrule_alloc(VALUE self)
@@ -1313,6 +1330,68 @@ static VALUE clips_environment_static_find_defmodule(VALUE self, VALUE rbEnviron
 	return clips_environment_find_defmodule(rbEnvironment, defmodule_name);
 }
 
+static VALUE clips_environment_find_deftemplate(VALUE self, VALUE deftemplate_name)
+{
+	Environment *env;
+	Deftemplate *template;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch (TYPE(deftemplate_name)) {
+		case T_STRING:
+			template = FindDeftemplate(env, StringValueCStr(deftemplate_name));
+			break;
+		case T_SYMBOL:
+			template = FindDeftemplate(env, rb_id2name(SYM2ID(deftemplate_name)));
+			break;
+                default:
+			rb_warn("deftemplate name must be a symbol or string");
+			return Qnil;
+        }
+
+	if (template == NULL) {
+		return Qnil;
+	} else {
+		VALUE rbDeftemplate;
+		rbDeftemplate = TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Deftemplate")), &Deftemplate_type, template);
+		rb_iv_set(rbDeftemplate, "@environment", self);
+		return rbDeftemplate;
+	}
+}
+
+static VALUE clips_environment_static_find_deftemplate(VALUE self, VALUE rbEnvironment, VALUE deftemplate_name)
+{
+	return clips_environment_find_deftemplate(rbEnvironment, deftemplate_name);
+}
+
+static VALUE clips_environment_deftemplate_name(VALUE self)
+{
+	Deftemplate *deftemplate;
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
+
+	return ID2SYM(rb_intern(DeftemplateName(deftemplate)));
+}
+
+static VALUE clips_environment_deftemplate_static_name(VALUE self, VALUE rbDeftemplate)
+{
+	return clips_environment_deftemplate_name(rbDeftemplate);
+}
+
+static VALUE clips_environment_deftemplate_pp_form(VALUE self)
+{
+	Deftemplate *deftemplate;
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
+
+	return rb_str_new2(DeftemplatePPForm(deftemplate));
+}
+
+static VALUE clips_environment_deftemplate_static_pp_form(VALUE self, VALUE rbDeftemplate)
+{
+	return clips_environment_deftemplate_pp_form(rbDeftemplate);
+}
+
 static VALUE clips_environment_get_fact_list(int argc, VALUE *argv, VALUE rbEnvironment) {
 	VALUE defmodule_or_defmodule_name;
 	Environment *env;
@@ -1603,12 +1682,21 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "find_defrule", clips_environment_find_defrule, 1);
 	rb_define_singleton_method(rbEnvironment, "find_defmodule", clips_environment_static_find_defmodule, 2);
 	rb_define_method(rbEnvironment, "find_defmodule", clips_environment_find_defmodule, 1);
+	rb_define_singleton_method(rbEnvironment, "find_deftemplate", clips_environment_static_find_deftemplate, 2);
+	rb_define_method(rbEnvironment, "find_deftemplate", clips_environment_find_deftemplate, 1);
 	rb_define_singleton_method(rbEnvironment, "get_current_module", clips_environment_static_get_current_module, 1);
 	rb_define_method(rbEnvironment, "get_current_module", clips_environment_get_current_module, 0);
 	rb_define_singleton_method(rbEnvironment, "set_current_module", clips_environment_static_set_current_module, 2);
 	rb_define_method(rbEnvironment, "set_current_module", clips_environment_set_current_module, 1);
 	rb_define_singleton_method(rbEnvironment, "get_fact_list", clips_environment_static_get_fact_list, -1);
 	rb_define_method(rbEnvironment, "get_fact_list", clips_environment_get_fact_list, -1);
+
+	VALUE rbDeftemplate = rb_define_class_under(rbEnvironment, "Deftemplate", rb_cObject);
+	rb_define_alloc_func(rbDeftemplate, deftemplate_alloc);
+	rb_define_singleton_method(rbDeftemplate, "name", clips_environment_deftemplate_static_name, 1);
+	rb_define_method(rbDeftemplate, "name", clips_environment_deftemplate_name, 0);
+	rb_define_singleton_method(rbDeftemplate, "pp_form", clips_environment_deftemplate_static_pp_form, 1);
+	rb_define_method(rbDeftemplate, "pp_form", clips_environment_deftemplate_pp_form, 0);
 
 	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
 	rb_define_alloc_func(rbDefmodule, defmodule_alloc);

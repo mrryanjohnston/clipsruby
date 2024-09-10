@@ -342,4 +342,15 @@ class ClipsrubyTest < Minitest::Test
     assert_equal [fact1.to_h, fact2.to_h],
       defmodule.get_fact_list.map(&:to_h)
   end
+
+  def test_find_deftemplate_name_pp_form
+    env = CLIPS.create_environment
+    refute env.find_deftemplate(:does_not_exist)
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    template = env.find_deftemplate(:"my-template")
+    assert_equal :"my-template",
+      template.name
+    assert_equal "(deftemplate MAIN::my-template\n   (slot foo)\n   (multislot bar))\n",
+      template.pp_form
+  end
 end
