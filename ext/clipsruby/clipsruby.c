@@ -1264,18 +1264,14 @@ static VALUE clips_environment_static_get_current_module(VALUE self, VALUE rbEnv
 static VALUE clips_environment_set_current_module(VALUE self, VALUE rbDefmodule)
 {
 	Environment *env;
-	Defmodule *module, *returnModule;
+	Defmodule *module;
 
 	TypedData_Get_Struct(self, Environment, &Environment_type, env);
 	TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, module);
 
-	returnModule = SetCurrentModule(env, module);
+	SetCurrentModule(env, module);
 
-	if (module != returnModule) {
-		return Qnil;
-	} else {
-		return rbDefmodule;
-	}
+	return rbDefmodule;
 }
 
 static VALUE clips_environment_static_set_current_module(VALUE self, VALUE rbEnvironment, VALUE defmodule_name)
@@ -1347,7 +1343,7 @@ static VALUE clips_environment_defmodule_static_pp_form(VALUE self, VALUE rbDefm
 
 static VALUE clips_environment_defmodule_set_current(VALUE self)
 {
-	Defmodule *module, *returnModule;
+	Defmodule *module;
 	Environment *env;
 
 	VALUE rbEnvironment = rb_iv_get(self, "@environment");
@@ -1355,13 +1351,9 @@ static VALUE clips_environment_defmodule_set_current(VALUE self)
 	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
 	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
 
-	returnModule = SetCurrentModule(env, module);
+	SetCurrentModule(env, module);
 
-	if (module != returnModule) {
-		return Qnil;
-	} else {
-		return self;
-	}
+	return self;
 }
 
 static VALUE clips_environment_defmodule_static_set_current(VALUE self, VALUE rbDefmodule)
