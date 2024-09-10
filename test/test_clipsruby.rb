@@ -316,4 +316,30 @@ class ClipsrubyTest < Minitest::Test
     assert_equal :MAIN,
       env.get_current_module.name
   end
+
+  def test_get_fact_list
+    env = CLIPS.create_environment
+    fact1 = env.assert_string("(foo bar baz)")
+    fact2 = env.assert_string("(bar baz 1)")
+    assert_equal [fact1.to_h, fact2.to_h],
+      env.get_fact_list.map(&:to_h)
+    env.build("(defmodule my_module (export ?ALL))")
+    fact3 = env.assert_string("(baz \"asdf\")")
+    assert_equal [fact1.to_h, fact2.to_h, fact3.to_h],
+      env.get_fact_list.map(&:to_h)
+    assert_equal [fact1.to_h, fact2.to_h],
+      env.get_fact_list(:MAIN).map(&:to_h)
+    assert_equal [fact3.to_h],
+      env.get_fact_list(:my_module).map(&:to_h)
+    defmodule = env.get_current_module
+    assert_equal [fact3.to_h],
+      env.get_fact_list(defmodule).map(&:to_h)
+    assert_equal [fact3.to_h],
+      defmodule.get_fact_list.map(&:to_h)
+    defmodule = env.find_defmodule(:MAIN)
+    assert_equal [fact1.to_h, fact2.to_h],
+      env.get_fact_list(defmodule).map(&:to_h)
+    assert_equal [fact1.to_h, fact2.to_h],
+      defmodule.get_fact_list.map(&:to_h)
+  end
 end

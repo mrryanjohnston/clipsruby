@@ -168,6 +168,22 @@ CLIPS::Environment.find_fact(env, "(?f my_deftemplate)", "(eq ?f:b \"asdf\")")
 env.find_fact("(?f my_deftemplate)", "(= ?f:a 1)")
 ```
 
+### `CLIPS::Environment.get_fact_list`
+### `CLIPS::Environment#get_fact_list`
+
+Return an array of Facts in the environment. Pass an argument of a
+symbol, string, or Defmodule object in order to only get Facts with deftemplates
+in that Defmodule. If you do not, it will return all Facts in all modules.
+
+```ruby
+CLIPS::Environment.get_fact_list
+env.get_fact_list
+CLIPS::Environment.get_fact_list(:MAIN)
+env.get_fact_list(:MAIN)
+CLIPS::Environment.get_fact_list(defmodule)
+env.get_fact_list(defmodule)
+```
+
 ### `CLIPS::Environment.find_all_facts`
 ### `CLIPS::Environment#find_all_facts`
 
@@ -466,6 +482,16 @@ Sets the Defmodule as the current module of the environment
 ```ruby
 CLIPS::Environment::Defmodule.set_current(defmodule)
 defmodule.set_current
+```
+
+### `CLIPS::Environment::Defmodule.get_fact_list`
+### `CLIPS::Environment::Defmodule#get_fact_list`
+
+Return an array of Facts with deftemplates in the Defmodule
+
+```ruby
+CLIPS::Environment::Defmodule.get_fact_list(defmodule)
+defmodule.get_fact_list
 ```
 
 ## Running the tests

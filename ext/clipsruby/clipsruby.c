@@ -1313,6 +1313,75 @@ static VALUE clips_environment_static_find_defmodule(VALUE self, VALUE rbEnviron
 	return clips_environment_find_defmodule(rbEnvironment, defmodule_name);
 }
 
+static VALUE clips_environment_get_fact_list(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE defmodule_or_defmodule_name;
+	Environment *env;
+	Defmodule *module;
+	CLIPSValue value;
+	VALUE out;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "01", &defmodule_or_defmodule_name);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_NIL:
+			module = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			TypedData_Get_Struct(
+				clips_environment_find_defmodule(rbEnvironment, defmodule_or_defmodule_name),
+				Defmodule, &Defmodule_type, module);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(defmodule_or_defmodule_name, Defmodule, &Defmodule_type, module);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+	GetFactList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_static_get_fact_list(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, defmodule_or_defmodule_name;
+	Environment *env;
+	Defmodule *module;
+	CLIPSValue value;
+	VALUE out;
+
+	rb_scan_args(argc, argv, "11", &rbEnvironment, &defmodule_or_defmodule_name);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_NIL:
+			module = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			TypedData_Get_Struct(
+				clips_environment_find_defmodule(rbEnvironment, defmodule_or_defmodule_name),
+				Defmodule, &Defmodule_type, module);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(defmodule_or_defmodule_name, Defmodule, &Defmodule_type, module);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+	GetFactList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+
+}
+
 static VALUE clips_environment_defmodule_name(VALUE self)
 {
 	Defmodule *defmodule;
@@ -1359,6 +1428,30 @@ static VALUE clips_environment_defmodule_set_current(VALUE self)
 static VALUE clips_environment_defmodule_static_set_current(VALUE self, VALUE rbDefmodule)
 {
 	return clips_environment_defmodule_set_current(rbDefmodule);
+}
+
+static VALUE clips_environment_defmodule_get_fact_list(VALUE self)
+{
+	Defmodule *module;
+	Environment *env;
+	CLIPSValue value;
+	VALUE out;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	GetFactList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_defmodule_static_get_fact_list(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_get_fact_list(rbDefmodule);
 }
 
 static VALUE clips_environment_defrule_name(VALUE self)
@@ -1514,6 +1607,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "get_current_module", clips_environment_get_current_module, 0);
 	rb_define_singleton_method(rbEnvironment, "set_current_module", clips_environment_static_set_current_module, 2);
 	rb_define_method(rbEnvironment, "set_current_module", clips_environment_set_current_module, 1);
+	rb_define_singleton_method(rbEnvironment, "get_fact_list", clips_environment_static_get_fact_list, -1);
+	rb_define_method(rbEnvironment, "get_fact_list", clips_environment_get_fact_list, -1);
 
 	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
 	rb_define_alloc_func(rbDefmodule, defmodule_alloc);
@@ -1523,6 +1618,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefmodule, "pp_form", clips_environment_defmodule_pp_form, 0);
 	rb_define_singleton_method(rbDefmodule, "set_current", clips_environment_defmodule_static_set_current, 1);
 	rb_define_method(rbDefmodule, "set_current", clips_environment_defmodule_set_current, 0);
+	rb_define_singleton_method(rbDefmodule, "get_fact_list", clips_environment_defmodule_static_get_fact_list, 1);
+	rb_define_method(rbDefmodule, "get_fact_list", clips_environment_defmodule_get_fact_list, 0);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_alloc_func(rbFact, fact_alloc);
