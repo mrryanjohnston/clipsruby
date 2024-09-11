@@ -1,6 +1,18 @@
 #include "clips.h"
 #include "ruby.h"
 
+size_t deffacts_size(const void *data)
+{
+	return sizeof(Deffacts);
+}
+
+static const rb_data_type_t Deffacts_type = {
+	.function = {
+		.dsize = deffacts_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 size_t deftemplate_size(const void *data)
 {
 	return sizeof(Deftemplate);
@@ -101,6 +113,11 @@ static VALUE clips_environment_static_facts(VALUE self, VALUE rbEnvironment)
 VALUE defmodule_alloc(VALUE self)
 {
 	return TypedData_Wrap_Struct(self, &Defmodule_type, NULL);
+}
+
+VALUE deffacts_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Deffacts_type, NULL);
 }
 
 VALUE deftemplate_alloc(VALUE self)
@@ -1255,6 +1272,65 @@ static VALUE clips_environment_static_find_defrule(VALUE self, VALUE rbEnvironme
 	return clips_environment_find_defrule(rbEnvironment, defrule_name);
 }
 
+static VALUE clips_environment_find_deffacts(VALUE self, VALUE deffacts_name)
+{
+	Environment *env;
+	Deffacts *deffacts;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch (TYPE(deffacts_name)) {
+		case T_STRING:
+			deffacts = FindDeffacts(env, StringValueCStr(deffacts_name));
+			break;
+		case T_SYMBOL:
+			deffacts = FindDeffacts(env, rb_id2name(SYM2ID(deffacts_name)));
+			break;
+                default:
+			rb_warn("deffacts name must be a symbol or string");
+			return Qnil;
+        }
+
+	if (deffacts == NULL) {
+		return Qnil;
+	} else {
+		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Deffacts")), &Deffacts_type, deffacts);
+	}
+}
+
+static VALUE clips_environment_static_find_deffacts(VALUE self, VALUE rbEnvironment, VALUE deffacts_name)
+{
+	return clips_environment_find_deffacts(rbEnvironment, deffacts_name);
+}
+
+static VALUE clips_environment_deffacts_name(VALUE self)
+{
+	Deffacts *deffacts;
+
+	TypedData_Get_Struct(self, Deffacts, &Deffacts_type, deffacts);
+
+	return ID2SYM(rb_intern(DeffactsName(deffacts)));
+}
+
+static VALUE clips_environment_deffacts_static_name(VALUE self, VALUE rbDeffacts)
+{
+	return clips_environment_deffacts_name(rbDeffacts);
+}
+
+static VALUE clips_environment_deffacts_pp_form(VALUE self)
+{
+	Deffacts *deffacts;
+
+	TypedData_Get_Struct(self, Deffacts, &Deffacts_type, deffacts);
+
+	return rb_str_new2(DeffactsPPForm(deffacts));
+}
+
+static VALUE clips_environment_deffacts_static_pp_form(VALUE self, VALUE rbDeffacts)
+{
+	return clips_environment_deffacts_pp_form(rbDeffacts);
+}
+
 static VALUE clips_environment_get_current_module(VALUE self)
 {
 	Environment *env;
@@ -1390,6 +1466,58 @@ static VALUE clips_environment_deftemplate_pp_form(VALUE self)
 static VALUE clips_environment_deftemplate_static_pp_form(VALUE self, VALUE rbDeftemplate)
 {
 	return clips_environment_deftemplate_pp_form(rbDeftemplate);
+}
+
+static VALUE clips_environment_fact_pp_form(int argc, VALUE *argv, VALUE self)
+{
+	Fact *fact;
+	VALUE ignore_defaults, toReturn;
+	Environment *env;
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	StringBuilder *sb = CreateStringBuilder(env, 0);
+
+	rb_scan_args(argc, argv, "01", &ignore_defaults);
+
+	if (ignore_defaults == Qtrue) {
+		FactPPForm(fact, sb, true);
+	} else {
+		FactPPForm(fact, sb, false);
+	}
+
+	toReturn = rb_str_new2(sb->contents);
+
+	SBDispose(sb);
+
+	return toReturn;
+}
+
+static VALUE clips_environment_fact_static_pp_form(int argc, VALUE *argv, VALUE klass)
+{
+	Fact *fact;
+	VALUE self, ignore_defaults, toReturn;
+	Environment *env;
+
+	rb_scan_args(argc, argv, "11", &self, &ignore_defaults);
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	StringBuilder *sb = CreateStringBuilder(env, 0);
+
+	if (ignore_defaults == Qtrue) {
+		FactPPForm(fact, sb, true);
+	} else {
+		FactPPForm(fact, sb, false);
+	}
+
+	toReturn = rb_str_new2(sb->contents);
+
+	SBDispose(sb);
+
+	return toReturn;
 }
 
 static VALUE clips_environment_get_fact_list(int argc, VALUE *argv, VALUE rbEnvironment) {
@@ -1690,6 +1818,15 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "set_current_module", clips_environment_set_current_module, 1);
 	rb_define_singleton_method(rbEnvironment, "get_fact_list", clips_environment_static_get_fact_list, -1);
 	rb_define_method(rbEnvironment, "get_fact_list", clips_environment_get_fact_list, -1);
+	rb_define_singleton_method(rbEnvironment, "find_deffacts", clips_environment_static_find_deffacts, 2);
+	rb_define_method(rbEnvironment, "find_deffacts", clips_environment_find_deffacts, 1);
+
+	VALUE rbDeffacts = rb_define_class_under(rbEnvironment, "Deffacts", rb_cObject);
+	rb_define_alloc_func(rbDeffacts, deffacts_alloc);
+	rb_define_singleton_method(rbDeffacts, "name", clips_environment_deffacts_static_name, 1);
+	rb_define_method(rbDeffacts, "name", clips_environment_deffacts_name, 0);
+	rb_define_singleton_method(rbDeffacts, "pp_form", clips_environment_deffacts_static_pp_form, 1);
+	rb_define_method(rbDeffacts, "pp_form", clips_environment_deffacts_pp_form, 0);
 
 	VALUE rbDeftemplate = rb_define_class_under(rbEnvironment, "Deftemplate", rb_cObject);
 	rb_define_alloc_func(rbDeftemplate, deftemplate_alloc);
@@ -1725,6 +1862,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbFact, "modify", clips_environment_fact_modify, 1);
 	rb_define_singleton_method(rbFact, "index", clips_environment_fact_static_index, 1);
 	rb_define_method(rbFact, "index", clips_environment_fact_index, 0);
+	rb_define_singleton_method(rbFact, "pp_form", clips_environment_fact_static_pp_form, -1);
+	rb_define_method(rbFact, "pp_form", clips_environment_fact_pp_form, -1);
 
 	VALUE rbDefrule = rb_define_class_under(rbEnvironment, "Defrule", rb_cObject);
 	rb_define_alloc_func(rbDefrule, defrule_alloc);

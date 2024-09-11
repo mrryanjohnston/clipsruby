@@ -302,6 +302,16 @@ CLIPS::Environment.set_current_module(env, defmodule)
 env.set_current_module(defmodule)
 ```
 
+### `CLIPS::Environment::Fact.pp_form`
+### `CLIPS::Environment::Fact#pp_form`
+
+Returns a pretty printed string representation of the Fact
+
+```ruby
+CLIPS::Environment::Fact.pp_form(fact)
+fact.pp_form
+```
+
 ### `CLIPS::Environment::Fact.to_h`
 ### `CLIPS::Environment::Fact#to_h`
 
@@ -522,6 +532,36 @@ Returns a pretty printed string representation of the Deftemplate
 ```ruby
 CLIPS::Environment::Deftemplate.pp_form(deftemplate)
 deftemplate.pp_form
+```
+
+### `CLIPS::Environment.find_deffacts`
+### `CLIPS::Environment#find_deffacts`
+
+Finds a deffacts by name and returns a CLIPS::Environment::Deffacts object
+
+```ruby
+CLIPS::Environment.find_deffacts(:a)
+env.find_deffacts("foo")
+```
+
+### `CLIPS::Environment::Deffacts.name`
+### `CLIPS::Environment::Deffacts#name`
+
+Returns the name of a deffacts as a symbol
+
+```ruby
+CLIPS::Environment::Deffacts.name(deffacts)
+deffacts.name
+```
+
+### `CLIPS::Environment::Deffacts.pp_form`
+### `CLIPS::Environment::Deffacts#pp_form`
+
+Returns a pretty printed string representation of the Deffacts
+
+```ruby
+CLIPS::Environment::Deffacts.pp_form(deffacts)
+deffacts.pp_form
 ```
 
 ## Running the tests
