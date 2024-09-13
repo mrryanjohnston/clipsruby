@@ -371,4 +371,24 @@ class ClipsrubyTest < Minitest::Test
     assert_equal "(deffacts MAIN::my-facts\n   (foo bar)\n   (foo bat)\n   (foo zig))\n",
       deffacts.pp_form
   end
+
+  def test_fact_deftemplate
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    fact = env.assert_hash(:"my-template", foo: :asdf, bar: [ 1, 2, "hjkl" ])
+    assert_equal :"my-template",
+      fact.deftemplate.name
+  end
+
+  def test_deftemplate_assert_hash
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    fact = env.find_deftemplate(:"my-template").assert_hash(foo: :asdf, bar: [1, 2, "hjkl"])
+    assert_equal :"my-template",
+      fact.deftemplate_name
+    assert_equal :"my-template",
+      fact.deftemplate.name
+    assert_equal({ foo: :asdf, bar: [ 1, 2, "hjkl" ] },
+      fact.to_h)
+  end
 end

@@ -332,6 +332,16 @@ CLIPS::Environment::Fact.index(fact)
 fact.index
 ```
 
+### `CLIPS::Environment::Fact.deftemplate`
+### `CLIPS::Environment::Fact#deftemplate`
+
+Returns the Deftemplate object for a fact
+
+```ruby
+CLIPS::Environment::Fact.deftemplate(fact)
+fact.deftemplate
+```
+
 ### `CLIPS::Environment::Fact.deftemplate_name`
 ### `CLIPS::Environment::Fact#deftemplate_name`
 
@@ -532,6 +542,17 @@ Returns a pretty printed string representation of the Deftemplate
 ```ruby
 CLIPS::Environment::Deftemplate.pp_form(deftemplate)
 deftemplate.pp_form
+```
+
+### `CLIPS::Environment::Deftemplate.assert_hash`
+### `CLIPS::Environment::Deftemplate#assert_hash`
+
+Asserts a hash in the clips environment that a Deftemplate is defined in.
+Returns the Fact object that was just asserted
+
+```ruby
+CLIPS::Environment::Deftemplate.assert_hash(deftemplate, foo: :bar)
+deftemplate.assert_hash(foo: :bar)
 ```
 
 ### `CLIPS::Environment.find_deffacts`

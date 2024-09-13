@@ -62,6 +62,26 @@ static const rb_data_type_t Fact_type = {
 	.flags = RUBY_TYPED_FREE_IMMEDIATELY
 };
 
+static VALUE clips_environment_fact_deftemplate(VALUE self)
+{
+	VALUE rbDeftemplate, rbEnvironment;
+	Fact *fact;
+	Deftemplate *template;
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+
+	template = FactDeftemplate(fact);
+	rbEnvironment = rb_iv_get(self, "@environment");
+	rbDeftemplate = TypedData_Wrap_Struct(rb_const_get(rb_obj_class(rbEnvironment), rb_intern("Deftemplate")), &Deftemplate_type, template);
+	rb_iv_set(rbDeftemplate, "@environment", rbEnvironment);
+	return rbDeftemplate;
+}
+
+static VALUE clips_environment_fact_static_deftemplate(VALUE self, VALUE rbFact)
+{
+	return clips_environment_fact_deftemplate(rbFact);
+}
+
 static VALUE clips_environment_fact_deftemplate_name(VALUE self)
 {
 	Fact *fact;
@@ -406,6 +426,64 @@ static VALUE clips_environment_assert_hash(VALUE self, VALUE deftemplate_name, V
 static VALUE clips_environment_static_assert_hash(VALUE self, VALUE environment, VALUE deftemplate_name, VALUE hash)
 {
 	return clips_environment_assert_hash(environment, deftemplate_name, hash);
+}
+
+static VALUE clips_environment_deftemplate_assert_hash(VALUE self, VALUE hash)
+{
+	const char *cdeftemplate_name;
+
+	Environment *env;
+	Deftemplate *template;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	cdeftemplate_name = DeftemplateName(template);
+
+	FactBuilder *fb = CreateFactBuilder(env, cdeftemplate_name);
+	switch (FBError(env))
+	{
+		case FBE_NO_ERROR:
+			break;
+		case FBE_DEFTEMPLATE_NOT_FOUND_ERROR:
+			rb_warn("Could not assert fact; deftemplate not found!");
+			return Qnil;
+		case FBE_IMPLIED_DEFTEMPLATE_ERROR:
+			rb_warn("Could not assert fact; cannot use assert_hash to create non-deftemplated facts!");
+			return Qnil;
+	}
+	void *args[2] = { (void *)fb, (void *)env };
+	rb_hash_foreach(hash, _clips_environment_assert_hash, (VALUE)args);
+	Fact *fact = FBAssert(fb);
+	FBDispose(fb);
+
+	switch (FBError(env))
+	{
+		case FBE_NO_ERROR:
+			break;
+		case FBE_NULL_POINTER_ERROR:
+			rb_warn("Could not assert fact. This might be a bug in clipsruby!");
+			return Qnil;
+		case FBE_COULD_NOT_ASSERT_ERROR:
+			rb_warn("Could not assert fact. Pattern matching of a fact or instance is already occurring.");
+			return Qnil;
+		case FBE_RULE_NETWORK_ERROR:
+			rb_warn("Could not assert fact. An error occurs while the assertion was being processed in the rule network.");
+			return Qnil;
+	}
+
+	VALUE rb_fact =
+		TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Fact")), &Fact_type, fact);
+
+	rb_iv_set(rb_fact, "@environment", rbEnvironment);
+
+	return rb_fact;
+}
+
+static VALUE clips_environment_deftemplate_static_assert_hash(VALUE self, VALUE deftemplate, VALUE hash)
+{
+	return clips_environment_deftemplate_assert_hash(deftemplate, hash);
 }
 
 static void CLIPSValue_to_VALUE(CLIPSValue *from, VALUE *value, VALUE *rbEnvironment)
@@ -1834,6 +1912,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDeftemplate, "name", clips_environment_deftemplate_name, 0);
 	rb_define_singleton_method(rbDeftemplate, "pp_form", clips_environment_deftemplate_static_pp_form, 1);
 	rb_define_method(rbDeftemplate, "pp_form", clips_environment_deftemplate_pp_form, 0);
+	rb_define_singleton_method(rbDeftemplate, "assert_hash", clips_environment_deftemplate_static_assert_hash, 2);
+	rb_define_method(rbDeftemplate, "assert_hash", clips_environment_deftemplate_assert_hash, 1);
 
 	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
 	rb_define_alloc_func(rbDefmodule, defmodule_alloc);
@@ -1848,6 +1928,8 @@ void Init_clipsruby(void)
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_alloc_func(rbFact, fact_alloc);
+	rb_define_singleton_method(rbFact, "deftemplate", clips_environment_fact_static_deftemplate, 1);
+	rb_define_method(rbFact, "deftemplate", clips_environment_fact_deftemplate, 0);
 	rb_define_singleton_method(rbFact, "deftemplate_name", clips_environment_fact_static_deftemplate_name, 1);
 	rb_define_method(rbFact, "deftemplate_name", clips_environment_fact_deftemplate_name, 0);
 	rb_define_singleton_method(rbFact, "to_h", clips_environment_fact_static_to_h, 1);
