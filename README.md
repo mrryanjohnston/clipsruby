@@ -514,6 +514,22 @@ CLIPS::Environment::Defmodule.get_fact_list(defmodule)
 defmodule.get_fact_list
 ```
 
+### `CLIPS::Environment.get_deftemplate_list`
+### `CLIPS::Environment#get_deftemplate_list`
+
+Return an array of Deftemplate names as symbols in the environment. Pass an argument of a
+symbol, string, or Defmodule object in order to only get Deftemplates
+in that Defmodule. If you do not, it will return all Deftemplate names in all modules.
+
+```ruby
+CLIPS::Environment.get_deftemplate_list
+env.get_deftemplate_list
+CLIPS::Environment.get_deftemplate_list(:MAIN)
+env.get_deftemplate_list(:MAIN)
+CLIPS::Environment.get_deftemplate_list(defmodule)
+env.get_deftemplate_list(defmodule)
+```
+
 ### `CLIPS::Environment.find_deftemplate`
 ### `CLIPS::Environment#find_deftemplate`
 
@@ -553,6 +569,16 @@ Returns the Fact object that was just asserted
 ```ruby
 CLIPS::Environment::Deftemplate.assert_hash(deftemplate, foo: :bar)
 deftemplate.assert_hash(foo: :bar)
+```
+
+### `CLIPS::Environment::Defmodule.get_deftemplate_list`
+### `CLIPS::Environment::Defmodule#get_deftemplate_list`
+
+Return an array of Deftemplate names as symboles in the Defmodule
+
+```ruby
+CLIPS::Environment::Defmodule.get_deftemplate_list(defmodule)
+defmodule.get_deftemplate_list
 ```
 
 ### `CLIPS::Environment.find_deffacts`

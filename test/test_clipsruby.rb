@@ -391,4 +391,15 @@ class ClipsrubyTest < Minitest::Test
     assert_equal({ foo: :asdf, bar: [ 1, 2, "hjkl" ] },
       fact.to_h)
   end
+
+  def test_get_deftemplate_list
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    env.build("(defmodule my_module (export deftemplate another_template))")
+    env.build("(deftemplate another_template (slot baz) (multislot bat))")
+    assert_equal [ :"MAIN::my-template", :"my_module::another_template" ],
+      env.get_deftemplate_list
+    assert_equal [ :another_template ],
+      env.find_defmodule(:my_module).get_deftemplate_list
+  end
 end
