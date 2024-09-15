@@ -96,6 +96,21 @@ static VALUE clips_environment_fact_static_deftemplate_name(VALUE self, VALUE rb
 	return clips_environment_fact_deftemplate_name(rbFact);
 }
 
+static VALUE clips_environment_deftemplate_defmodule_name(VALUE self)
+{
+	Deftemplate *template;
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+
+	return ID2SYM(rb_intern(DeftemplateModule(template)));
+}
+
+static VALUE clips_environment_deftemplate_static_defmodule_name(VALUE self, VALUE rbDeftemplate)
+{
+	return clips_environment_deftemplate_defmodule_name(rbDeftemplate);
+}
+
+
 void environment_free(void *data)
 {
 	DestroyEnvironment((Environment*) data);
@@ -736,6 +751,31 @@ static VALUE clips_environment_static_add_udf(int argc, VALUE *argv, VALUE klass
 	return _clips_environment_add_udf(environment, method_name, clips_function_name);
 }
 
+static VALUE clips_environment_deftemplate_slot_names(VALUE self)
+{
+	Deftemplate *template;
+	Environment *env;
+	CLIPSValue value;
+	VALUE out;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	DeftemplateSlotNames(template, &value);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_deftemplate_static_slot_names(VALUE self, VALUE rbDeftemplate)
+{
+	return clips_environment_deftemplate_slot_names(rbDeftemplate);
+}
+
+
 static VALUE clips_environment_run(int argc, VALUE *argv, VALUE environment) {
 	VALUE integer;
 	Environment *env;
@@ -1194,6 +1234,71 @@ static VALUE clips_environment_fact_static_get_slot(VALUE self, VALUE rbFact, VA
 {
 	return clips_environment_fact_get_slot(rbFact, slot_name);
 }
+
+static VALUE clips_environment_deftemplate_slot_allowed_values(VALUE self, VALUE slot_name)
+{
+	Deftemplate *template;
+	CLIPSValue slot_allowed_values;
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+
+	switch (TYPE(slot_name)) {
+		case T_STRING:
+			DeftemplateSlotAllowedValues(template, StringValueCStr(slot_name), &slot_allowed_values);
+			break;
+		case T_SYMBOL:
+			DeftemplateSlotAllowedValues(template, rb_id2name(SYM2ID(slot_name)), &slot_allowed_values);
+			break;
+                default:
+			rb_warn("slot name must be string or symbol in call to slot_allowed_values!");
+			return Qnil;
+        }
+
+	VALUE out;
+
+	CLIPSValue_to_VALUE(&slot_allowed_values, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_deftemplate_static_slot_allowed_values(VALUE self, VALUE rbDeftemplate, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_allowed_values(rbDeftemplate, slot_name);
+}
+
+static VALUE clips_environment_deftemplate_slot_default_value(VALUE self, VALUE slot_name)
+{
+	Deftemplate *template;
+	CLIPSValue slot_default_value;
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+
+	switch (TYPE(slot_name)) {
+		case T_STRING:
+			DeftemplateSlotDefaultValue(template, StringValueCStr(slot_name), &slot_default_value);
+			break;
+		case T_SYMBOL:
+			DeftemplateSlotDefaultValue(template, rb_id2name(SYM2ID(slot_name)), &slot_default_value);
+			break;
+                default:
+			rb_warn("slot name must be string or symbol in call to slot_default_value!");
+			return Qnil;
+        }
+
+	VALUE out;
+
+	CLIPSValue_to_VALUE(&slot_default_value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_deftemplate_static_slot_default_value(VALUE self, VALUE rbDeftemplate, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_default_value(rbDeftemplate, slot_name);
+}
+
 
 static VALUE clips_environment_fact_retract(VALUE self)
 {
@@ -1876,6 +1981,24 @@ static VALUE clips_environment_defrule_static_is_deletable(VALUE self, VALUE rbD
 	return clips_environment_defrule_is_deletable(rbDefrule);
 }
 
+static VALUE clips_environment_deftemplate_is_deletable(VALUE self)
+{
+	Deftemplate *deftemplate;
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
+
+	if (DeftemplateIsDeletable(deftemplate)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_deftemplate_static_is_deletable(VALUE self, VALUE rbDeftemplate)
+{
+	return clips_environment_deftemplate_is_deletable(rbDeftemplate);
+}
+
 static VALUE clips_environment_defrule_has_breakpoint(VALUE self)
 {
 	Defrule *defrule;
@@ -2007,6 +2130,16 @@ void Init_clipsruby(void)
 	rb_define_method(rbDeftemplate, "pp_form", clips_environment_deftemplate_pp_form, 0);
 	rb_define_singleton_method(rbDeftemplate, "assert_hash", clips_environment_deftemplate_static_assert_hash, 2);
 	rb_define_method(rbDeftemplate, "assert_hash", clips_environment_deftemplate_assert_hash, 1);
+	rb_define_singleton_method(rbDeftemplate, "defmodule_name", clips_environment_deftemplate_static_defmodule_name, 1);
+	rb_define_method(rbDeftemplate, "defmodule_name", clips_environment_deftemplate_defmodule_name, 0);
+	rb_define_singleton_method(rbDeftemplate, "slot_names", clips_environment_deftemplate_static_slot_names, 1);
+	rb_define_method(rbDeftemplate, "slot_names", clips_environment_deftemplate_slot_names, 0);
+	rb_define_singleton_method(rbDeftemplate, "is_deletable", clips_environment_deftemplate_static_is_deletable, 1);
+	rb_define_method(rbDeftemplate, "is_deletable", clips_environment_deftemplate_is_deletable, 0);
+	rb_define_singleton_method(rbDeftemplate, "slot_allowed_values", clips_environment_deftemplate_static_slot_allowed_values, 2);
+	rb_define_method(rbDeftemplate, "slot_allowed_values", clips_environment_deftemplate_slot_allowed_values, 1);
+	rb_define_singleton_method(rbDeftemplate, "slot_default_value", clips_environment_deftemplate_static_slot_default_value, 2);
+	rb_define_method(rbDeftemplate, "slot_default_value", clips_environment_deftemplate_slot_default_value, 1);
 
 	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
 	rb_define_alloc_func(rbDefmodule, defmodule_alloc);

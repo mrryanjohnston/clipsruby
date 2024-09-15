@@ -571,6 +571,56 @@ CLIPS::Environment::Deftemplate.assert_hash(deftemplate, foo: :bar)
 deftemplate.assert_hash(foo: :bar)
 ```
 
+### `CLIPS::Environment::Deftemplate.defmodule_name`
+### `CLIPS::Environment::Deftemplate#defmodule_name`
+
+Returns the name of the defmodule in which the deftemplate is defined
+
+```ruby
+CLIPS::Environment::Deftemplate.defmodule_name(deftemplate)
+deftemplate.defmodule_name
+```
+
+### `CLIPS::Environment::Deftemplate.slot_names`
+### `CLIPS::Environment::Deftemplate#slot_names`
+
+Returns the slot names of a deftemplate as symbols
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_names(deftemplate)
+deftemplate.slot_names
+```
+
+### `CLIPS::Environment::Deftemplate.is_deletable`
+### `CLIPS::Environment::Deftemplate#is_deletable`
+
+Returns a boolean whether the Deftemplate is deletable or not
+
+```ruby
+CLIPS::Environment::Deftemplate.is_deletable(deftemplate)
+deftemplate.is_deletable
+```
+
+### `CLIPS::Environment::Deftemplate.slot_allowed_values`
+### `CLIPS::Environment::Deftemplate#slot_allowed_values`
+
+Returns the allowed values for the slot of a deftemplate as symbols
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_allowed_values(deftemplate, :foo)
+deftemplate.slot_allowed_values('bar')
+```
+
+### `CLIPS::Environment::Deftemplate.slot_default_value`
+### `CLIPS::Environment::Deftemplate#slot_default_value`
+
+Returns the default value(s) for the slot of a deftemplate as symbols
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_default_value(deftemplate, :foo)
+deftemplate.slot_default_value('bar')
+```
+
 ### `CLIPS::Environment::Defmodule.get_deftemplate_list`
 ### `CLIPS::Environment::Defmodule#get_deftemplate_list`
 

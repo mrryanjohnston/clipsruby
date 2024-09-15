@@ -402,4 +402,60 @@ class ClipsrubyTest < Minitest::Test
     assert_equal [ :another_template ],
       env.find_defmodule(:my_module).get_deftemplate_list
   end
+
+  def test_deftemplate_defmodule_name
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    assert_equal :MAIN,
+      env.find_deftemplate(:"my-template").defmodule_name
+    env.build("(defmodule my_module (export deftemplate another_template))")
+    env.build("(deftemplate another_template (slot baz) (multislot bat))")
+    assert_equal :my_module,
+      env.find_deftemplate(:another_template).defmodule_name
+  end
+
+  def test_deftemplate_slot_names
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    env.build("(deftemplate another_template (slot baz) (multislot bat))")
+    assert_equal [:foo, :bar],
+      env.find_deftemplate(:"my-template").slot_names
+    assert_equal [:baz, :bat],
+      env.find_deftemplate(:another_template).slot_names
+  end
+
+  def test_deftemplate_is_deletable
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    env.build("(deftemplate another_template (slot baz) (multislot bat))")
+    assert env.find_deftemplate(:"my-template").is_deletable
+    env.assert_hash(:another_template, baz: 1)
+    refute env.find_deftemplate(:another_template).is_deletable
+  end
+
+  def test_slot_allowed_values
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo (allowed-values a b c d)) (multislot bar (allowed-values 1 2 asdf)) (slot baz) (multislot bat))")
+    template = env.find_deftemplate(:"my-template")
+    assert_equal [ :a, :b, :c, :d ],
+      template.slot_allowed_values(:foo)
+    assert_equal [ 1, 2, :asdf ],
+      template.slot_allowed_values('bar')
+    refute template.slot_allowed_values('baz')
+    refute template.slot_allowed_values('bat')
+  end
+
+  def test_slot_default_value
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo (default FOO)) (multislot bar) (slot baz) (multislot bat (default 1 2 3)))")
+    template = env.find_deftemplate(:"my-template")
+    assert_equal :FOO,
+      template.slot_default_value(:foo)
+    assert_equal [],
+      template.slot_default_value('bar')
+    assert_equal :nil,
+      template.slot_default_value('baz')
+    assert_equal [1, 2, 3],
+      template.slot_default_value('bat')
+  end
 end
