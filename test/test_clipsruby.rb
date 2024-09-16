@@ -458,4 +458,161 @@ class ClipsrubyTest < Minitest::Test
     assert_equal [1, 2, 3],
       template.slot_default_value('bat')
   end
+
+  def test_watch_unwatch
+    env = CLIPS.create_environment
+    assert_nil env.get_watch_state(:foo)
+
+    refute env.get_watch_state(:all)
+    assert_nil env.watch_all
+    #TODO: uncomment when fixed in upstream CLIPS
+    #assert env.get_watch_state(:all)
+    assert_nil env.unwatch_all
+    refute env.get_watch_state(:all)
+    assert_nil env.watch(:all)
+    #TODO: uncomment when fixed in upstream CLIPS
+    #assert env.get_watch_state(:all)
+    assert_nil env.unwatch(:all)
+    refute env.get_watch_state(:all)
+
+    refute env.get_watch_state(:facts)
+    assert_nil env.watch_facts
+    assert env.get_watch_state(:facts)
+    assert_nil env.unwatch_facts
+    refute env.get_watch_state(:facts)
+    assert_nil env.watch(:facts)
+    assert env.get_watch_state(:facts)
+    assert_nil env.unwatch(:facts)
+    refute env.get_watch_state(:facts)
+
+    refute env.get_watch_state(:instances)
+    assert_nil env.watch_instances
+    assert env.get_watch_state(:instances)
+    assert_nil env.unwatch_instances
+    refute env.get_watch_state(:instances)
+    assert_nil env.watch(:instances)
+    assert env.get_watch_state(:instances)
+    assert_nil env.unwatch(:instances)
+    refute env.get_watch_state(:instances)
+
+    refute env.get_watch_state(:slots)
+    assert_nil env.watch_slots
+    assert env.get_watch_state(:slots)
+    assert_nil env.unwatch_slots
+    refute env.get_watch_state(:slots)
+    assert_nil env.watch(:slots)
+    assert env.get_watch_state(:slots)
+    assert_nil env.unwatch(:slots)
+    refute env.get_watch_state(:slots)
+
+    refute env.get_watch_state(:rules)
+    assert_nil env.watch_rules
+    assert env.get_watch_state(:rules)
+    assert_nil env.unwatch_rules
+    refute env.get_watch_state(:rules)
+    assert_nil env.watch(:rules)
+    assert env.get_watch_state(:rules)
+    assert_nil env.unwatch(:rules)
+    refute env.get_watch_state(:rules)
+
+    refute env.get_watch_state(:activations)
+    assert_nil env.watch_activations
+    assert env.get_watch_state(:activations)
+    assert_nil env.unwatch_activations
+    refute env.get_watch_state(:activations)
+    assert_nil env.watch(:activations)
+    assert env.get_watch_state(:activations)
+    assert_nil env.unwatch(:activations)
+    refute env.get_watch_state(:activations)
+
+    refute env.get_watch_state(:messages)
+    assert_nil env.watch_messages
+    assert env.get_watch_state(:messages)
+    assert_nil env.unwatch_messages
+    refute env.get_watch_state(:messages)
+    assert_nil env.watch(:messages)
+    assert env.get_watch_state(:messages)
+    assert_nil env.unwatch(:messages)
+    refute env.get_watch_state(:messages)
+
+    refute env.get_watch_state(:message_handlers)
+    assert_nil env.watch_message_handlers
+    assert env.get_watch_state(:message_handlers)
+    assert_nil env.unwatch_message_handlers
+    refute env.get_watch_state(:message_handlers)
+    assert_nil env.watch(:message_handlers)
+    assert env.get_watch_state(:message_handlers)
+    assert_nil env.unwatch(:message_handlers)
+    refute env.get_watch_state(:message_handlers)
+
+    refute env.get_watch_state(:generic_functions)
+    assert_nil env.watch_generic_functions
+    assert env.get_watch_state(:generic_functions)
+    assert_nil env.unwatch_generic_functions
+    refute env.get_watch_state(:generic_functions)
+    assert_nil env.watch(:generic_functions)
+    assert env.get_watch_state(:generic_functions)
+    assert_nil env.unwatch(:generic_functions)
+    refute env.get_watch_state(:generic_functions)
+
+    refute env.get_watch_state(:methods)
+    assert_nil env.watch_methods
+    assert env.get_watch_state(:methods)
+    assert_nil env.unwatch_methods
+    refute env.get_watch_state(:methods)
+    assert_nil env.watch(:methods)
+    assert env.get_watch_state(:methods)
+    assert_nil env.unwatch(:methods)
+    refute env.get_watch_state(:methods)
+
+    refute env.get_watch_state(:deffunctions)
+    assert_nil env.watch_deffunctions
+    assert env.get_watch_state(:deffunctions)
+    assert_nil env.unwatch_deffunctions
+    refute env.get_watch_state(:deffunctions)
+    assert_nil env.watch(:deffunctions)
+    assert env.get_watch_state(:deffunctions)
+    assert_nil env.unwatch(:deffunctions)
+    refute env.get_watch_state(:deffunctions)
+
+    refute env.get_watch_state(:compilations)
+    assert_nil env.watch_compilations
+    assert env.get_watch_state(:compilations)
+    assert_nil env.unwatch_compilations
+    refute env.get_watch_state(:compilations)
+    assert_nil env.watch(:compilations)
+    assert env.get_watch_state(:compilations)
+    assert_nil env.unwatch(:compilations)
+    refute env.get_watch_state(:compilations)
+
+    refute env.get_watch_state(:statistics)
+    assert_nil env.watch_statistics
+    assert env.get_watch_state(:statistics)
+    assert_nil env.unwatch_statistics
+    refute env.get_watch_state(:statistics)
+    assert_nil env.watch(:statistics)
+    assert env.get_watch_state(:statistics)
+    assert_nil env.unwatch(:statistics)
+    refute env.get_watch_state(:statistics)
+
+    refute env.get_watch_state(:globals)
+    assert_nil env.watch_globals
+    assert env.get_watch_state(:globals)
+    assert_nil env.unwatch_globals
+    refute env.get_watch_state(:globals)
+    assert_nil env.watch(:globals)
+    assert env.get_watch_state(:globals)
+    assert_nil env.unwatch(:globals)
+    refute env.get_watch_state(:globals)
+
+    refute env.get_watch_state(:focus)
+    assert_nil env.watch_focus
+    assert env.get_watch_state(:focus)
+    assert_nil env.unwatch_focus
+    refute env.get_watch_state(:focus)
+    assert_nil env.watch(:focus)
+    assert env.get_watch_state(:focus)
+    assert_nil env.unwatch(:focus)
+    refute env.get_watch_state(:focus)
+  end
 end

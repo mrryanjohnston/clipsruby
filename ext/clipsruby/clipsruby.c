@@ -2051,6 +2051,644 @@ static VALUE clips_environment_defrule_static_remove_break(VALUE self, VALUE rbD
 	return clips_environment_defrule_remove_break(rbDefrule);
 }
 
+static VALUE clips_environment_watch(VALUE self, VALUE item)
+{
+	Environment *env;
+	WatchItem watchItem;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	if (item == ID2SYM(rb_intern("all"))) {
+		watchItem = ALL;
+	} else if (item == ID2SYM(rb_intern("facts"))) {
+		watchItem = FACTS;
+	} else if (item == ID2SYM(rb_intern("instances"))) {
+		watchItem = INSTANCES;
+	} else if (item == ID2SYM(rb_intern("slots"))) {
+		watchItem = SLOTS;
+	} else if (item == ID2SYM(rb_intern("rules"))) {
+		watchItem = RULES;
+	} else if (item == ID2SYM(rb_intern("activations"))) {
+		watchItem = ACTIVATIONS;
+	} else if (item == ID2SYM(rb_intern("messages"))) {
+		watchItem = MESSAGES;
+	} else if (item == ID2SYM(rb_intern("message_handlers"))) {
+		watchItem = MESSAGE_HANDLERS;
+	} else if (item == ID2SYM(rb_intern("generic_functions"))) {
+		watchItem = GENERIC_FUNCTIONS;
+	} else if (item == ID2SYM(rb_intern("methods"))) {
+		watchItem = METHODS;
+	} else if (item == ID2SYM(rb_intern("deffunctions"))) {
+		watchItem = DEFFUNCTIONS;
+	} else if (item == ID2SYM(rb_intern("compilations"))) {
+		watchItem = COMPILATIONS;
+	} else if (item == ID2SYM(rb_intern("statistics"))) {
+		watchItem = STATISTICS;
+	} else if (item == ID2SYM(rb_intern("globals"))) {
+		watchItem = GLOBALS;
+	} else if (item == ID2SYM(rb_intern("focus"))) {
+		watchItem = FOCUS;
+	} else {
+		rb_warn("unknown watch item");
+		return Qnil;
+	}
+
+	Watch(env, watchItem);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch(VALUE self, VALUE rbEnvironment, VALUE item)
+{
+	return clips_environment_watch(rbEnvironment, item);
+}
+
+static VALUE clips_environment_unwatch(VALUE self, VALUE item)
+{
+	Environment *env;
+	WatchItem watchItem;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	if (item == ID2SYM(rb_intern("all"))) {
+		watchItem = ALL;
+	} else if (item == ID2SYM(rb_intern("facts"))) {
+		watchItem = FACTS;
+	} else if (item == ID2SYM(rb_intern("instances"))) {
+		watchItem = INSTANCES;
+	} else if (item == ID2SYM(rb_intern("slots"))) {
+		watchItem = SLOTS;
+	} else if (item == ID2SYM(rb_intern("rules"))) {
+		watchItem = RULES;
+	} else if (item == ID2SYM(rb_intern("activations"))) {
+		watchItem = ACTIVATIONS;
+	} else if (item == ID2SYM(rb_intern("messages"))) {
+		watchItem = MESSAGES;
+	} else if (item == ID2SYM(rb_intern("message_handlers"))) {
+		watchItem = MESSAGE_HANDLERS;
+	} else if (item == ID2SYM(rb_intern("generic_functions"))) {
+		watchItem = GENERIC_FUNCTIONS;
+	} else if (item == ID2SYM(rb_intern("methods"))) {
+		watchItem = METHODS;
+	} else if (item == ID2SYM(rb_intern("deffunctions"))) {
+		watchItem = DEFFUNCTIONS;
+	} else if (item == ID2SYM(rb_intern("compilations"))) {
+		watchItem = COMPILATIONS;
+	} else if (item == ID2SYM(rb_intern("statistics"))) {
+		watchItem = STATISTICS;
+	} else if (item == ID2SYM(rb_intern("globals"))) {
+		watchItem = GLOBALS;
+	} else if (item == ID2SYM(rb_intern("focus"))) {
+		watchItem = FOCUS;
+	} else {
+		rb_warn("unknown watch item");
+		return Qnil;
+	}
+
+	Unwatch(env, watchItem);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch(VALUE self, VALUE rbEnvironment, VALUE item)
+{
+	return clips_environment_unwatch(rbEnvironment, item);
+}
+
+static VALUE clips_environment_watch_all(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, ALL);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_all(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_all(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_facts(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, FACTS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_facts(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_facts(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_instances(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, INSTANCES);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_instances(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_instances(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_slots(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, SLOTS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_slots(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_slots(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_rules(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, RULES);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_rules(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_rules(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_activations(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, ACTIVATIONS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_activations(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_activations(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_messages(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, MESSAGES);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_messages(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_messages(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_message_handlers(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, MESSAGE_HANDLERS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_message_handlers(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_message_handlers(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_generic_functions(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, GENERIC_FUNCTIONS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_generic_functions(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_generic_functions(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_methods(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, METHODS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_methods(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_methods(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_deffunctions(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, DEFFUNCTIONS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_deffunctions(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_deffunctions(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_compilations(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, COMPILATIONS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_compilations(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_compilations(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_statistics(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, STATISTICS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_statistics(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_statistics(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_globals(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, GLOBALS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_globals(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_globals(rbEnvironment);
+}
+
+static VALUE clips_environment_watch_focus(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Watch(env, FOCUS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_watch_focus(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_watch_focus(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_all(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, ALL);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_all(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_all(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_facts(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, FACTS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_facts(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_facts(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_instances(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, INSTANCES);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_instances(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_instances(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_slots(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, SLOTS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_slots(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_slots(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_rules(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, RULES);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_rules(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_rules(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_activations(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, ACTIVATIONS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_activations(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_activations(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_messages(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, MESSAGES);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_messages(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_messages(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_message_handlers(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, MESSAGE_HANDLERS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_message_handlers(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_message_handlers(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_generic_functions(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, GENERIC_FUNCTIONS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_generic_functions(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_generic_functions(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_methods(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, METHODS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_methods(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_methods(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_deffunctions(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, DEFFUNCTIONS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_deffunctions(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_deffunctions(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_compilations(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, COMPILATIONS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_compilations(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_compilations(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_statistics(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, STATISTICS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_statistics(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_statistics(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_globals(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, GLOBALS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_globals(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_globals(rbEnvironment);
+}
+
+static VALUE clips_environment_unwatch_focus(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Unwatch(env, FOCUS);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_unwatch_focus(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_unwatch_focus(rbEnvironment);
+}
+
+static VALUE clips_environment_get_watch_state(VALUE self, VALUE item)
+{
+	Environment *env;
+	WatchItem watchItem;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	if (item == ID2SYM(rb_intern("all"))) {
+		watchItem = ALL;
+	} else if (item == ID2SYM(rb_intern("facts"))) {
+		watchItem = FACTS;
+	} else if (item == ID2SYM(rb_intern("instances"))) {
+		watchItem = INSTANCES;
+	} else if (item == ID2SYM(rb_intern("slots"))) {
+		watchItem = SLOTS;
+	} else if (item == ID2SYM(rb_intern("rules"))) {
+		watchItem = RULES;
+	} else if (item == ID2SYM(rb_intern("activations"))) {
+		watchItem = ACTIVATIONS;
+	} else if (item == ID2SYM(rb_intern("messages"))) {
+		watchItem = MESSAGES;
+	} else if (item == ID2SYM(rb_intern("message_handlers"))) {
+		watchItem = MESSAGE_HANDLERS;
+	} else if (item == ID2SYM(rb_intern("generic_functions"))) {
+		watchItem = GENERIC_FUNCTIONS;
+	} else if (item == ID2SYM(rb_intern("methods"))) {
+		watchItem = METHODS;
+	} else if (item == ID2SYM(rb_intern("deffunctions"))) {
+		watchItem = DEFFUNCTIONS;
+	} else if (item == ID2SYM(rb_intern("compilations"))) {
+		watchItem = COMPILATIONS;
+	} else if (item == ID2SYM(rb_intern("statistics"))) {
+		watchItem = STATISTICS;
+	} else if (item == ID2SYM(rb_intern("globals"))) {
+		watchItem = GLOBALS;
+	} else if (item == ID2SYM(rb_intern("focus"))) {
+		watchItem = FOCUS;
+	} else {
+		rb_warn("unknown watch item");
+		return Qnil;
+	}
+
+	if (GetWatchState(env, watchItem)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_static_get_watch_state(VALUE self, VALUE rbEnvironment, VALUE item)
+{
+	return clips_environment_get_watch_state(rbEnvironment, item);
+}
+
 void Init_clipsruby(void)
 {
 	VALUE rbCLIPS = rb_define_module("CLIPS");
@@ -2114,6 +2752,72 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "get_deftemplate_list", clips_environment_get_deftemplate_list, -1);
 	rb_define_singleton_method(rbEnvironment, "find_deffacts", clips_environment_static_find_deffacts, 2);
 	rb_define_method(rbEnvironment, "find_deffacts", clips_environment_find_deffacts, 1);
+	rb_define_singleton_method(rbEnvironment, "watch", clips_environment_static_watch, 2);
+	rb_define_method(rbEnvironment, "watch", clips_environment_watch, 1);
+	rb_define_singleton_method(rbEnvironment, "watch_all", clips_environment_static_watch_all, 1);
+	rb_define_method(rbEnvironment, "watch_all", clips_environment_watch_all, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_facts", clips_environment_static_watch_facts, 1);
+	rb_define_method(rbEnvironment, "watch_facts", clips_environment_watch_facts, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_instances", clips_environment_static_watch_instances, 1);
+	rb_define_method(rbEnvironment, "watch_instances", clips_environment_watch_instances, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_slots", clips_environment_static_watch_slots, 1);
+	rb_define_method(rbEnvironment, "watch_slots", clips_environment_watch_slots, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_rules", clips_environment_static_watch_rules, 1);
+	rb_define_method(rbEnvironment, "watch_rules", clips_environment_watch_rules, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_activations", clips_environment_static_watch_activations, 1);
+	rb_define_method(rbEnvironment, "watch_activations", clips_environment_watch_activations, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_messages", clips_environment_static_watch_messages, 1);
+	rb_define_method(rbEnvironment, "watch_messages", clips_environment_watch_messages, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_message_handlers", clips_environment_static_watch_message_handlers, 1);
+	rb_define_method(rbEnvironment, "watch_message_handlers", clips_environment_watch_message_handlers, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_generic_functions", clips_environment_static_watch_generic_functions, 1);
+	rb_define_method(rbEnvironment, "watch_generic_functions", clips_environment_watch_generic_functions, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_methods", clips_environment_static_watch_methods, 1);
+	rb_define_method(rbEnvironment, "watch_methods", clips_environment_watch_methods, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_deffunctions", clips_environment_static_watch_deffunctions, 1);
+	rb_define_method(rbEnvironment, "watch_deffunctions", clips_environment_watch_deffunctions, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_compilations", clips_environment_static_watch_compilations, 1);
+	rb_define_method(rbEnvironment, "watch_compilations", clips_environment_watch_compilations, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_statistics", clips_environment_static_watch_statistics, 1);
+	rb_define_method(rbEnvironment, "watch_statistics", clips_environment_watch_statistics, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_globals", clips_environment_static_watch_globals, 1);
+	rb_define_method(rbEnvironment, "watch_globals", clips_environment_watch_globals, 0);
+	rb_define_singleton_method(rbEnvironment, "watch_focus", clips_environment_static_watch_focus, 1);
+	rb_define_method(rbEnvironment, "watch_focus", clips_environment_watch_focus, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch", clips_environment_static_unwatch, 2);
+	rb_define_method(rbEnvironment, "unwatch", clips_environment_unwatch, 1);
+	rb_define_singleton_method(rbEnvironment, "unwatch_all", clips_environment_static_unwatch_all, 1);
+	rb_define_method(rbEnvironment, "unwatch_all", clips_environment_unwatch_all, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_facts", clips_environment_static_unwatch_facts, 1);
+	rb_define_method(rbEnvironment, "unwatch_facts", clips_environment_unwatch_facts, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_instances", clips_environment_static_unwatch_instances, 1);
+	rb_define_method(rbEnvironment, "unwatch_instances", clips_environment_unwatch_instances, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_slots", clips_environment_static_unwatch_slots, 1);
+	rb_define_method(rbEnvironment, "unwatch_slots", clips_environment_unwatch_slots, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_rules", clips_environment_static_unwatch_rules, 1);
+	rb_define_method(rbEnvironment, "unwatch_rules", clips_environment_unwatch_rules, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_activations", clips_environment_static_unwatch_activations, 1);
+	rb_define_method(rbEnvironment, "unwatch_activations", clips_environment_unwatch_activations, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_messages", clips_environment_static_unwatch_messages, 1);
+	rb_define_method(rbEnvironment, "unwatch_messages", clips_environment_unwatch_messages, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_message_handlers", clips_environment_static_unwatch_message_handlers, 1);
+	rb_define_method(rbEnvironment, "unwatch_message_handlers", clips_environment_unwatch_message_handlers, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_generic_functions", clips_environment_static_unwatch_generic_functions, 1);
+	rb_define_method(rbEnvironment, "unwatch_generic_functions", clips_environment_unwatch_generic_functions, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_methods", clips_environment_static_unwatch_methods, 1);
+	rb_define_method(rbEnvironment, "unwatch_methods", clips_environment_unwatch_methods, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_deffunctions", clips_environment_static_unwatch_deffunctions, 1);
+	rb_define_method(rbEnvironment, "unwatch_deffunctions", clips_environment_unwatch_deffunctions, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_compilations", clips_environment_static_unwatch_compilations, 1);
+	rb_define_method(rbEnvironment, "unwatch_compilations", clips_environment_unwatch_compilations, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_statistics", clips_environment_static_unwatch_statistics, 1);
+	rb_define_method(rbEnvironment, "unwatch_statistics", clips_environment_unwatch_statistics, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_globals", clips_environment_static_unwatch_globals, 1);
+	rb_define_method(rbEnvironment, "unwatch_globals", clips_environment_unwatch_globals, 0);
+	rb_define_singleton_method(rbEnvironment, "unwatch_focus", clips_environment_static_unwatch_focus, 1);
+	rb_define_method(rbEnvironment, "unwatch_focus", clips_environment_unwatch_focus, 0);
+	rb_define_singleton_method(rbEnvironment, "get_watch_state", clips_environment_static_get_watch_state, 2);
+	rb_define_method(rbEnvironment, "get_watch_state", clips_environment_get_watch_state, 1);
 
 	VALUE rbDeffacts = rb_define_class_under(rbEnvironment, "Deffacts", rb_cObject);
 	rb_define_alloc_func(rbDeffacts, deffacts_alloc);

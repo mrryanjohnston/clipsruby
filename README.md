@@ -661,6 +661,54 @@ CLIPS::Environment::Deffacts.pp_form(deffacts)
 deffacts.pp_form
 ```
 
+### `CLIPS::Environment.watch`
+### `env.watch`
+### `CLIPS::Environment.unwatch`
+### `env.unwatch`
+
+"Watch" or "Unwatch" a specific thing that happens in the CLIPS environment.
+There are several things that may be watched (or unwatched) such that CLIPS will
+report debugging information to `STDOUT`. This gem provides two ways to watch
+or unwatch a debug item: either pass the watch item as a symbol to `watch` or
+`unwatch`, or use the corresponding `watch_foo` or `unwatch_foo` methods where
+`foo` is replaced by the watch item (as listed):
+
+```ruby
+:all
+:facts
+:instances
+:slots
+:rules
+:activations
+:messages
+:message_handlers
+:generic_functions
+:methods
+:deffunctions
+:compilations
+:statistics
+:globals
+:focus
+```
+
+```ruby
+CLIPS::Environment.watch_facts
+env.watch_statistics
+CLIPS::Environment.unwatch(:facts)
+env.unwatch(:statistics)
+```
+
+### `CLIPS::Environment.get_watch_state`
+### `env.get_watch_state`
+
+Returns a bool representing whether or not the given debug item
+is currently being watched in the environment.
+
+```ruby
+CLIPS::Environment.get_watch_state(env, :facts)
+env.get_watch_state(:methods)
+```
+
 ## Running the tests
 
 Simply do `rake compile` and then `rake test` in order to run the tests.
