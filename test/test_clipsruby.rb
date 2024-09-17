@@ -459,6 +459,39 @@ class ClipsrubyTest < Minitest::Test
       template.slot_default_value('bat')
   end
 
+  def test_slot_types
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo (type INTEGER SYMBOL)) (multislot bat (type FLOAT FACT-ADDRESS)))")
+    template = env.find_deftemplate(:"my-template")
+    assert_equal [:INTEGER, :SYMBOL],
+      template.slot_types(:foo)
+    assert_equal [:FLOAT, :"FACT-ADDRESS"],
+      template.slot_types(:bat)
+  end
+
+  def test_slot_range
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo (type INTEGER) (range 1 123)) (slot bat (type FACT-ADDRESS)) (slot bar (type FLOAT)))")
+    template = env.find_deftemplate(:"my-template")
+    assert_equal [1, 123],
+      template.slot_range(:foo)
+    refute template.slot_range(:bat)
+    assert_equal [:"-oo", :"+oo"],
+      template.slot_range(:bar)
+  end
+
+  def test_slot_range
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bat (cardinality 3 7)) (multislot bar (cardinality 88 ?VARIABLE)))")
+    template = env.find_deftemplate(:"my-template")
+    assert_equal [],
+      template.slot_cardinality(:foo)
+    assert_equal [3, 7],
+      template.slot_cardinality(:bat)
+    assert_equal [88, :"+oo"],
+      template.slot_cardinality(:bar)
+  end
+
   def test_watch_unwatch
     env = CLIPS.create_environment
     assert_nil env.get_watch_state(:foo)

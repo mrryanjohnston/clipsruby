@@ -1300,6 +1300,99 @@ static VALUE clips_environment_deftemplate_static_slot_default_value(VALUE self,
 }
 
 
+static VALUE clips_environment_deftemplate_slot_types(VALUE self, VALUE slot_name)
+{
+	Deftemplate *template;
+	CLIPSValue slot_types;
+	VALUE out;
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+
+	switch (TYPE(slot_name)) {
+		case T_STRING:
+			DeftemplateSlotTypes(template, StringValueCStr(slot_name), &slot_types);
+			break;
+		case T_SYMBOL:
+			DeftemplateSlotTypes(template, rb_id2name(SYM2ID(slot_name)), &slot_types);
+			break;
+                default:
+			rb_warn("slot name must be string or symbol in call to slot_types!");
+			return Qnil;
+        }
+
+	CLIPSValue_to_VALUE(&slot_types, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_deftemplate_static_slot_types(VALUE self, VALUE rbEnvironment, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_types(rbEnvironment, slot_name);
+}
+
+static VALUE clips_environment_deftemplate_slot_range(VALUE self, VALUE slot_name)
+{
+	Deftemplate *template;
+	CLIPSValue slot_range;
+	VALUE out;
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+
+	switch (TYPE(slot_name)) {
+		case T_STRING:
+			DeftemplateSlotRange(template, StringValueCStr(slot_name), &slot_range);
+			break;
+		case T_SYMBOL:
+			DeftemplateSlotRange(template, rb_id2name(SYM2ID(slot_name)), &slot_range);
+			break;
+                default:
+			rb_warn("slot name must be string or symbol in call to slot_range!");
+			return Qnil;
+        }
+
+	CLIPSValue_to_VALUE(&slot_range, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_deftemplate_static_slot_range(VALUE self, VALUE rbEnvironment, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_range(rbEnvironment, slot_name);
+}
+
+static VALUE clips_environment_deftemplate_slot_cardinality(VALUE self, VALUE slot_name)
+{
+	Deftemplate *template;
+	CLIPSValue slot_cardinality;
+	VALUE out;
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+
+	switch (TYPE(slot_name)) {
+		case T_STRING:
+			DeftemplateSlotCardinality(template, StringValueCStr(slot_name), &slot_cardinality);
+			break;
+		case T_SYMBOL:
+			DeftemplateSlotCardinality(template, rb_id2name(SYM2ID(slot_name)), &slot_cardinality);
+			break;
+                default:
+			rb_warn("slot name must be string or symbol in call to slot_cardinality!");
+			return Qnil;
+        }
+
+	CLIPSValue_to_VALUE(&slot_cardinality, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_deftemplate_static_slot_cardinality(VALUE self, VALUE rbEnvironment, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_cardinality(rbEnvironment, slot_name);
+}
+
 static VALUE clips_environment_fact_retract(VALUE self)
 {
 	Fact *fact;
@@ -2844,6 +2937,12 @@ void Init_clipsruby(void)
 	rb_define_method(rbDeftemplate, "slot_allowed_values", clips_environment_deftemplate_slot_allowed_values, 1);
 	rb_define_singleton_method(rbDeftemplate, "slot_default_value", clips_environment_deftemplate_static_slot_default_value, 2);
 	rb_define_method(rbDeftemplate, "slot_default_value", clips_environment_deftemplate_slot_default_value, 1);
+	rb_define_singleton_method(rbDeftemplate, "slot_types", clips_environment_deftemplate_static_slot_types, 2);
+	rb_define_method(rbDeftemplate, "slot_types", clips_environment_deftemplate_slot_types, 1);
+	rb_define_singleton_method(rbDeftemplate, "slot_range", clips_environment_deftemplate_static_slot_range, 2);
+	rb_define_method(rbDeftemplate, "slot_range", clips_environment_deftemplate_slot_range, 1);
+	rb_define_singleton_method(rbDeftemplate, "slot_cardinality", clips_environment_deftemplate_static_slot_cardinality, 2);
+	rb_define_method(rbDeftemplate, "slot_cardinality", clips_environment_deftemplate_slot_cardinality, 1);
 
 	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
 	rb_define_alloc_func(rbDefmodule, defmodule_alloc);

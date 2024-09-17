@@ -621,6 +621,51 @@ CLIPS::Environment::Deftemplate.slot_default_value(deftemplate, :foo)
 deftemplate.slot_default_value('bar')
 ```
 
+### `CLIPS::Environment::Deftemplate.slot_types`
+### `CLIPS::Environment::Deftemplate#slot_types`
+
+Returns the slot type(s) for the named slot of a deftemplate as symbols.
+Possible types are as follows:
+
+```ruby
+:SYMBOL
+:STRING
+:LEXEME
+:INTEGER
+:FLOAT
+:NUMBER
+:"INSTANCE-NAME"
+:"INSTANCE-ADDRESS"
+:INSTANCE
+:"EXTERNAL-ADDRESS"
+:"FACT-ADDRESS"
+```
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_types(deftemplate, :foo)
+deftemplate.slot_types('bar')
+```
+
+### `CLIPS::Environment::Deftemplate.slot_range`
+### `CLIPS::Environment::Deftemplate#slot_range`
+
+Returns the range of a named slot of a deftemplate as integers or symbols (in case of infinity).
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_range(deftemplate, :foo)
+deftemplate.slot_range('bar')
+```
+
+### `CLIPS::Environment::Deftemplate.slot_cardinality`
+### `CLIPS::Environment::Deftemplate#slot_cardinality`
+
+Returns the cardinality of a named slot of a deftemplate as integers or symbols (in case of infinity).
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_cardinality(deftemplate, :foo)
+deftemplate.slot_cardinality('bar')
+```
+
 ### `CLIPS::Environment::Defmodule.get_deftemplate_list`
 ### `CLIPS::Environment::Defmodule#get_deftemplate_list`
 
