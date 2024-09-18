@@ -480,7 +480,7 @@ class ClipsrubyTest < Minitest::Test
       template.slot_range(:bar)
   end
 
-  def test_slot_range
+  def test_slot_cadinality
     env = CLIPS.create_environment
     env.build("(deftemplate my-template (slot foo) (multislot bat (cardinality 3 7)) (multislot bar (cardinality 88 ?VARIABLE)))")
     template = env.find_deftemplate(:"my-template")
@@ -490,6 +490,24 @@ class ClipsrubyTest < Minitest::Test
       template.slot_cardinality(:bat)
     assert_equal [88, :"+oo"],
       template.slot_cardinality(:bar)
+  end
+
+  def test_deftemplate_slot_existp_multip_singlep_defaultp
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo (default FOO)) (multislot bar) (slot bat (default-dynamic (gensym))) (slot baz (default ?NONE)))")
+    assert env.find_deftemplate(:"my-template").slot_existp(:foo)
+    assert env.find_deftemplate(:"my-template").slot_singlep(:foo)
+    refute env.find_deftemplate(:"my-template").slot_multip(:foo)
+    refute env.find_deftemplate(:"my-template").slot_singlep(:bar)
+    assert env.find_deftemplate(:"my-template").slot_multip(:bar)
+    assert_equal :STATIC_DEFAULT,
+      env.find_deftemplate(:"my-template").slot_defaultp(:foo)
+    assert_equal :STATIC_DEFAULT,
+      env.find_deftemplate(:"my-template").slot_defaultp(:bar)
+    assert_equal :NO_DEFAULT,
+      env.find_deftemplate(:"my-template").slot_defaultp(:baz)
+    assert_equal :DYNAMIC_DEFAULT,
+      env.find_deftemplate(:"my-template").slot_defaultp(:bat)
   end
 
   def test_watch_unwatch

@@ -666,6 +666,56 @@ CLIPS::Environment::Deftemplate.slot_cardinality(deftemplate, :foo)
 deftemplate.slot_cardinality('bar')
 ```
 
+### `CLIPS::Environment::Deftemplate.slot_existp`
+### `CLIPS::Environment::Deftemplate#slot_existp`
+
+Returns a boolean for whether or not the slot with a given name
+exists on the Deftemplate.
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_existp(deftemplate, :foo)
+deftemplate.slot_existp('bar')
+```
+
+### `CLIPS::Environment::Deftemplate.slot_singlep`
+### `CLIPS::Environment::Deftemplate#slot_singlep`
+
+Returns a boolean for whether or not the slot with a given name
+on the Deftemplate is a single slot.
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_singlep(deftemplate, :foo)
+deftemplate.slot_singlep('bar')
+```
+
+### `CLIPS::Environment::Deftemplate.slot_multip`
+### `CLIPS::Environment::Deftemplate#slot_multip`
+
+Returns a boolean for whether or not the slot with a given name
+on the Deftemplate is a multislot.
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_multip(deftemplate, :foo)
+deftemplate.slot_multip('bar')
+```
+
+### `CLIPS::Environment::Deftemplate.slot_defaultp`
+### `CLIPS::Environment::Deftemplate#slot_defaultp`
+
+Returns a symbol representing the type of default value a slot has
+on the Deftemplate. Possible return values are as follows:
+
+```ruby
+:NO_DEFAULT
+:STATIC_DEFAULT
+:DYNAMIC_DEFAULT
+```
+
+```ruby
+CLIPS::Environment::Deftemplate.slot_defaultp(deftemplate, :foo)
+deftemplate.slot_defaultp('bar')
+```
+
 ### `CLIPS::Environment::Defmodule.get_deftemplate_list`
 ### `CLIPS::Environment::Defmodule#get_deftemplate_list`
 

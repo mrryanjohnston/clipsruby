@@ -2092,6 +2092,136 @@ static VALUE clips_environment_deftemplate_static_is_deletable(VALUE self, VALUE
 	return clips_environment_deftemplate_is_deletable(rbDeftemplate);
 }
 
+static VALUE clips_environment_deftemplate_slot_existp(VALUE self, VALUE slot_name)
+{
+	Deftemplate *deftemplate;
+	const char *cslot_name;
+	switch(TYPE(slot_name))
+	{
+		case T_SYMBOL:
+			cslot_name = rb_id2name(SYM2ID(slot_name));
+			break;
+		case T_STRING:
+			cslot_name = StringValueCStr(slot_name);
+			break;
+		default:
+			rb_raise(rb_eTypeError, "Slot name must be a String or a Symbol");
+			return ST_CONTINUE;
+	}
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
+
+	if (DeftemplateSlotExistP(deftemplate, cslot_name)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_deftemplate_static_slot_existp(VALUE self, VALUE rbDeftemplate, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_existp(rbDeftemplate, slot_name);
+}
+
+static VALUE clips_environment_deftemplate_slot_singlep(VALUE self, VALUE slot_name)
+{
+	Deftemplate *deftemplate;
+	const char *cslot_name;
+	switch(TYPE(slot_name))
+	{
+		case T_SYMBOL:
+			cslot_name = rb_id2name(SYM2ID(slot_name));
+			break;
+		case T_STRING:
+			cslot_name = StringValueCStr(slot_name);
+			break;
+		default:
+			rb_raise(rb_eTypeError, "Slot name must be a String or a Symbol");
+			return ST_CONTINUE;
+	}
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
+
+	if (DeftemplateSlotSingleP(deftemplate, cslot_name)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_deftemplate_static_slot_singlep(VALUE self, VALUE rbDeftemplate, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_singlep(rbDeftemplate, slot_name);
+}
+
+static VALUE clips_environment_deftemplate_slot_multip(VALUE self, VALUE slot_name)
+{
+	Deftemplate *deftemplate;
+	const char *cslot_name;
+	switch(TYPE(slot_name))
+	{
+		case T_SYMBOL:
+			cslot_name = rb_id2name(SYM2ID(slot_name));
+			break;
+		case T_STRING:
+			cslot_name = StringValueCStr(slot_name);
+			break;
+		default:
+			rb_raise(rb_eTypeError, "Slot name must be a String or a Symbol");
+			return ST_CONTINUE;
+	}
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
+
+	if (DeftemplateSlotMultiP(deftemplate, cslot_name)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_deftemplate_static_slot_multip(VALUE self, VALUE rbDeftemplate, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_multip(rbDeftemplate, slot_name);
+}
+
+static VALUE clips_environment_deftemplate_slot_defaultp(VALUE self, VALUE slot_name)
+{
+	Deftemplate *deftemplate;
+	const char *cslot_name;
+	switch(TYPE(slot_name))
+	{
+		case T_SYMBOL:
+			cslot_name = rb_id2name(SYM2ID(slot_name));
+			break;
+		case T_STRING:
+			cslot_name = StringValueCStr(slot_name);
+			break;
+		default:
+			rb_warn("Slot name must be a String or a Symbol");
+			return Qnil;
+	}
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
+
+	switch (DeftemplateSlotDefaultP(deftemplate, cslot_name)) {
+		case NO_DEFAULT:
+			return ID2SYM(rb_intern("NO_DEFAULT"));
+		case STATIC_DEFAULT:
+			return ID2SYM(rb_intern("STATIC_DEFAULT"));
+		case DYNAMIC_DEFAULT:
+			return ID2SYM(rb_intern("DYNAMIC_DEFAULT"));
+		default:
+			rb_warn("CLIPS returned something we didn't expect for slot_defaultp...");
+			return Qnil;
+	}
+}
+
+static VALUE clips_environment_deftemplate_static_slot_defaultp(VALUE self, VALUE rbDeftemplate, VALUE slot_name)
+{
+	return clips_environment_deftemplate_slot_defaultp(rbDeftemplate, slot_name);
+}
+
 static VALUE clips_environment_defrule_has_breakpoint(VALUE self)
 {
 	Defrule *defrule;
@@ -2943,6 +3073,14 @@ void Init_clipsruby(void)
 	rb_define_method(rbDeftemplate, "slot_range", clips_environment_deftemplate_slot_range, 1);
 	rb_define_singleton_method(rbDeftemplate, "slot_cardinality", clips_environment_deftemplate_static_slot_cardinality, 2);
 	rb_define_method(rbDeftemplate, "slot_cardinality", clips_environment_deftemplate_slot_cardinality, 1);
+	rb_define_singleton_method(rbDeftemplate, "slot_existp", clips_environment_deftemplate_static_slot_existp, 2);
+	rb_define_method(rbDeftemplate, "slot_existp", clips_environment_deftemplate_slot_existp, 1);
+	rb_define_singleton_method(rbDeftemplate, "slot_singlep", clips_environment_deftemplate_static_slot_singlep, 2);
+	rb_define_method(rbDeftemplate, "slot_singlep", clips_environment_deftemplate_slot_singlep, 1);
+	rb_define_singleton_method(rbDeftemplate, "slot_multip", clips_environment_deftemplate_static_slot_multip, 2);
+	rb_define_method(rbDeftemplate, "slot_multip", clips_environment_deftemplate_slot_multip, 1);
+	rb_define_singleton_method(rbDeftemplate, "slot_defaultp", clips_environment_deftemplate_static_slot_defaultp, 2);
+	rb_define_method(rbDeftemplate, "slot_defaultp", clips_environment_deftemplate_slot_defaultp, 1);
 
 	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
 	rb_define_alloc_func(rbDefmodule, defmodule_alloc);
