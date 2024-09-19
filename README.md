@@ -312,6 +312,16 @@ CLIPS::Environment::Fact.pp_form(fact)
 fact.pp_form
 ```
 
+### `CLIPS::Environment::Fact.existp`
+### `CLIPS::Environment::Fact#existp`
+
+Returns a boolean representing whether or not a Fact has been retracted
+
+```ruby
+CLIPS::Environment::Fact.existp(fact)
+fact.existp
+```
+
 ### `CLIPS::Environment::Fact.to_h`
 ### `CLIPS::Environment::Fact#to_h`
 

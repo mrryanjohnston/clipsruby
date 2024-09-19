@@ -1796,6 +1796,24 @@ static VALUE clips_environment_fact_static_pp_form(int argc, VALUE *argv, VALUE 
 	return toReturn;
 }
 
+static VALUE clips_environment_fact_existp(VALUE self)
+{
+	Fact *fact;
+
+	TypedData_Get_Struct(self, Fact, &Fact_type, fact);
+
+	if (FactExistp(fact)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_fact_static_existp(VALUE self, VALUE rbFact)
+{
+	return clips_environment_fact_existp(rbFact);
+}
+
 static VALUE clips_environment_get_fact_list(int argc, VALUE *argv, VALUE rbEnvironment) {
 	VALUE defmodule_or_defmodule_name;
 	Environment *env;
@@ -3115,6 +3133,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbFact, "index", clips_environment_fact_index, 0);
 	rb_define_singleton_method(rbFact, "pp_form", clips_environment_fact_static_pp_form, -1);
 	rb_define_method(rbFact, "pp_form", clips_environment_fact_pp_form, -1);
+	rb_define_singleton_method(rbFact, "existp", clips_environment_fact_static_existp, 1);
+	rb_define_method(rbFact, "existp", clips_environment_fact_existp, 0);
 
 	VALUE rbDefrule = rb_define_class_under(rbEnvironment, "Defrule", rb_cObject);
 	rb_define_alloc_func(rbDefrule, defrule_alloc);

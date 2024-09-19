@@ -217,6 +217,15 @@ class ClipsrubyTest < Minitest::Test
     assert_equal 0, facts.length
   end
 
+  def test_fact_existp
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    fact = env.assert_hash(:"my-template", foo: :asdf, bar: [ 1, 2, "hjkl" ])
+    assert fact.existp
+    fact.retract
+    refute fact.existp
+  end
+
   def test_modify
     env = CLIPS.create_environment
     assert_nil env.build("(deftemplate my-template (slot foo) (multislot bar))")
