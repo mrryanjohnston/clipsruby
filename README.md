@@ -474,6 +474,16 @@ CLIPS::Environment::Defrule.remove_break(defrule)
 defrule.remove_break
 ```
 
+### `CLIPS::Environment::Defrule.salience`
+### `CLIPS::Environment::Defrule#salience`
+
+Returns the salience of a defrule
+
+```ruby
+CLIPS::Environment::Defrule.salience(defrule)
+defrule.salience
+```
+
 ### `CLIPS::Environment.find_defmodule`
 ### `CLIPS::Environment#find_defmodule`
 
@@ -538,6 +548,22 @@ CLIPS::Environment.get_deftemplate_list(:MAIN)
 env.get_deftemplate_list(:MAIN)
 CLIPS::Environment.get_deftemplate_list(defmodule)
 env.get_deftemplate_list(defmodule)
+```
+
+### `CLIPS::Environment.get_defrule_list`
+### `CLIPS::Environment#get_defrule_list`
+
+Return an array of Defrule names as symbols in the environment. Pass an argument of a
+symbol, string, or Defmodule object in order to only get Defrules
+in that Defmodule. If you do not, it will return all Defrule names in all modules.
+
+```ruby
+CLIPS::Environment.get_defrule_list
+env.get_defrule_list
+CLIPS::Environment.get_defrule_list(:MAIN)
+env.get_defrule_list(:MAIN)
+CLIPS::Environment.get_defrule_list(defmodule)
+env.get_defrule_list(defmodule)
 ```
 
 ### `CLIPS::Environment.find_deftemplate`
@@ -741,11 +767,21 @@ deftemplate.slot_defaultp('bar')
 ### `CLIPS::Environment::Defmodule.get_deftemplate_list`
 ### `CLIPS::Environment::Defmodule#get_deftemplate_list`
 
-Return an array of Deftemplate names as symboles in the Defmodule
+Return an array of Deftemplate names as symbols in the Defmodule
 
 ```ruby
 CLIPS::Environment::Defmodule.get_deftemplate_list(defmodule)
 defmodule.get_deftemplate_list
+```
+
+### `CLIPS::Environment::Defmodule.get_defrule_list`
+### `CLIPS::Environment::Defmodule#get_defrule_list`
+
+Return an array of Defrule names as symbols in the Defmodule
+
+```ruby
+CLIPS::Environment::Defmodule.get_defrule_list(defmodule)
+defmodule.get_defrule_list
 ```
 
 ### `CLIPS::Environment.find_deffacts`

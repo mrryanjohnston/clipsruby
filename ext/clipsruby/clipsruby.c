@@ -1954,6 +1954,74 @@ static VALUE clips_environment_static_get_deftemplate_list(int argc, VALUE *argv
 	return out;
 }
 
+static VALUE clips_environment_get_defrule_list(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE defmodule_or_defmodule_name;
+	Environment *env;
+	Defmodule *module;
+	CLIPSValue value;
+	VALUE out;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "01", &defmodule_or_defmodule_name);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_NIL:
+			module = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			TypedData_Get_Struct(
+				clips_environment_find_defmodule(rbEnvironment, defmodule_or_defmodule_name),
+				Defmodule, &Defmodule_type, module);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(defmodule_or_defmodule_name, Defmodule, &Defmodule_type, module);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+	GetDefruleList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_static_get_defrule_list(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, defmodule_or_defmodule_name;
+	Environment *env;
+	Defmodule *module;
+	CLIPSValue value;
+	VALUE out;
+
+	rb_scan_args(argc, argv, "11", &rbEnvironment, &defmodule_or_defmodule_name);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_NIL:
+			module = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			TypedData_Get_Struct(
+				clips_environment_find_defmodule(rbEnvironment, defmodule_or_defmodule_name),
+				Defmodule, &Defmodule_type, module);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(defmodule_or_defmodule_name, Defmodule, &Defmodule_type, module);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+	GetDefruleList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
 static VALUE clips_environment_defmodule_name(VALUE self)
 {
 	Defmodule *defmodule;
@@ -2048,6 +2116,30 @@ static VALUE clips_environment_defmodule_get_deftemplate_list(VALUE self)
 static VALUE clips_environment_defmodule_static_get_deftemplate_list(VALUE self, VALUE rbDefmodule)
 {
 	return clips_environment_defmodule_get_deftemplate_list(rbDefmodule);
+}
+
+static VALUE clips_environment_defmodule_get_defrule_list(VALUE self)
+{
+	Defmodule *module;
+	Environment *env;
+	CLIPSValue value;
+	VALUE out;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	GetDefruleList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_defmodule_static_get_defrule_list(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_get_defrule_list(rbDefmodule);
 }
 
 static VALUE clips_environment_defrule_name(VALUE self)
@@ -2312,6 +2404,20 @@ static VALUE clips_environment_defrule_remove_break(VALUE self)
 static VALUE clips_environment_defrule_static_remove_break(VALUE self, VALUE rbDefrule)
 {
 	return clips_environment_defrule_remove_break(rbDefrule);
+}
+
+static VALUE clips_environment_defrule_salience(VALUE self)
+{
+	Defrule *defrule;
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, defrule);
+
+	return INT2NUM(defrule->salience);
+}
+
+static VALUE clips_environment_defrule_static_salience(VALUE self, VALUE rbDefrule)
+{
+	return clips_environment_defrule_salience(rbDefrule);
 }
 
 static VALUE clips_environment_watch(VALUE self, VALUE item)
@@ -3013,6 +3119,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "get_fact_list", clips_environment_get_fact_list, -1);
 	rb_define_singleton_method(rbEnvironment, "get_deftemplate_list", clips_environment_static_get_deftemplate_list, -1);
 	rb_define_method(rbEnvironment, "get_deftemplate_list", clips_environment_get_deftemplate_list, -1);
+	rb_define_singleton_method(rbEnvironment, "get_defrule_list", clips_environment_static_get_defrule_list, -1);
+	rb_define_method(rbEnvironment, "get_defrule_list", clips_environment_get_defrule_list, -1);
 	rb_define_singleton_method(rbEnvironment, "find_deffacts", clips_environment_static_find_deffacts, 2);
 	rb_define_method(rbEnvironment, "find_deffacts", clips_environment_find_deffacts, 1);
 	rb_define_singleton_method(rbEnvironment, "watch", clips_environment_static_watch, 2);
@@ -3136,6 +3244,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefmodule, "get_fact_list", clips_environment_defmodule_get_fact_list, 0);
 	rb_define_singleton_method(rbDefmodule, "get_deftemplate_list", clips_environment_defmodule_static_get_deftemplate_list, 1);
 	rb_define_method(rbDefmodule, "get_deftemplate_list", clips_environment_defmodule_get_deftemplate_list, 0);
+	rb_define_singleton_method(rbDefmodule, "get_defrule_list", clips_environment_defmodule_static_get_defrule_list, 1);
+	rb_define_method(rbDefmodule, "get_defrule_list", clips_environment_defmodule_get_defrule_list, 0);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_alloc_func(rbFact, fact_alloc);
@@ -3174,6 +3284,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefrule, "set_break", clips_environment_defrule_set_break, 0);
 	rb_define_singleton_method(rbDefrule, "remove_break", clips_environment_defrule_static_remove_break, 1);
 	rb_define_method(rbDefrule, "remove_break", clips_environment_defrule_remove_break, 0);
+	rb_define_singleton_method(rbDefrule, "salience", clips_environment_defrule_static_salience, 1);
+	rb_define_method(rbDefrule, "salience", clips_environment_defrule_salience, 0);
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 }

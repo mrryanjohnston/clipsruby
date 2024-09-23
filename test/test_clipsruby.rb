@@ -298,6 +298,16 @@ class ClipsrubyTest < Minitest::Test
     refute defrule.has_breakpoint
   end
 
+  def test_defrule_salience
+    env = CLIPS.create_environment
+    env.build("(defrule with-salience (declare (salience 1000)) =>)")
+    env.build("(defrule without-salience =>)")
+    assert_equal 1000,
+      env.find_defrule(:"with-salience").salience
+    assert_equal 0,
+      env.find_defrule(:"without-salience").salience
+  end
+
   def test_find_defmodule_name
     env = CLIPS.create_environment
     assert_nil env.find_defmodule(:does_not_exist)
@@ -417,6 +427,27 @@ class ClipsrubyTest < Minitest::Test
       env.get_deftemplate_list
     assert_equal [ :another_template ],
       env.find_defmodule(:my_module).get_deftemplate_list
+  end
+
+  def test_get_defrule_list
+    env = CLIPS.create_environment
+    env.build("(defrule runs-once =>)")
+    env.build("(defrule runs-once-also =>)")
+    env.build("(defrule runs-once-as-well =>)")
+    env.build("(defrule runs-once-as-well-too =>)")
+    assert_equal [ :"MAIN::runs-once", :"MAIN::runs-once-also", :"MAIN::runs-once-as-well", :"MAIN::runs-once-as-well-too" ],
+      env.get_defrule_list
+    env.build("(defmodule my_module (export ?ALL))")
+    env.build("(defrule rule-in-another-module =>)")
+    my_module = env.find_defmodule(:my_module)
+    assert_equal [ :"MAIN::runs-once", :"MAIN::runs-once-also", :"MAIN::runs-once-as-well", :"MAIN::runs-once-as-well-too", :"my_module::rule-in-another-module" ],
+      env.get_defrule_list
+    assert_equal [ :"rule-in-another-module" ],
+      env.get_defrule_list(my_module)
+    assert_equal [ :"rule-in-another-module" ],
+      my_module.get_defrule_list
+    assert_equal [ :"rule-in-another-module" ],
+      env.get_defrule_list(:my_module)
   end
 
   def test_deftemplate_defmodule_name
