@@ -611,6 +611,18 @@ CLIPS::Environment::Deftemplate.is_deletable(deftemplate)
 deftemplate.is_deletable
 ```
 
+### `CLIPS::Environment::Deftemplate.is_implied`
+### `CLIPS::Environment::Deftemplate#is_implied`
+
+Returns a boolean whether the Deftemplate is implied or not.
+If the fact is an ordered fact, the Deftemplate is implied.
+Otherwise, the Deftemplate is considered explicitly defined.
+
+```ruby
+CLIPS::Environment::Deftemplate.is_implied(deftemplate)
+deftemplate.is_implied
+```
+
 ### `CLIPS::Environment::Deftemplate.slot_allowed_values`
 ### `CLIPS::Environment::Deftemplate#slot_allowed_values`
 

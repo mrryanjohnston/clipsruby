@@ -41,6 +41,7 @@ class ClipsrubyTest < Minitest::Test
       facts[0].to_h)
     assert_equal(fact2.to_h,
       facts[1].to_h)
+    assert_nil env.assert_string("(something is wrong ?)")
   end
 
   def test_assert_string_find_all_facts
@@ -244,6 +245,12 @@ class ClipsrubyTest < Minitest::Test
       fact.get_slot('foo')
     facts = env.find_all_facts("(?f my-template)")
     assert_equal 1, facts.length
+    fact = fact.modify("foo": 88.88)
+    assert_equal 88.88,
+      fact.get_slot('foo')
+    fact = fact.modify({"foo" => "one two three"})
+    assert_equal "one two three",
+      fact.get_slot('foo')
   end
 
   def test_index
@@ -440,6 +447,13 @@ class ClipsrubyTest < Minitest::Test
     assert env.find_deftemplate(:"my-template").is_deletable
     env.assert_hash(:another_template, baz: 1)
     refute env.find_deftemplate(:another_template).is_deletable
+  end
+
+  def test_deftemplate_is_implied
+    env = CLIPS.create_environment
+    env.build("(deftemplate my-template (slot foo) (multislot bar))")
+    refute env.find_deftemplate(:"my-template").is_implied
+    assert env.assert_string("(asdf hjkl)").deftemplate.is_implied
   end
 
   def test_slot_allowed_values

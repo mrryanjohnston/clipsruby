@@ -188,6 +188,10 @@ static VALUE clips_environment_assert_string(VALUE self, VALUE string)
 
 	Fact *fact = AssertString(env, StringValueCStr(string));
 
+	if (fact == NULL) {
+		return Qnil;
+	}
+
 	VALUE rb_fact =
 		TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Fact")), &Fact_type, fact);
 
@@ -2110,6 +2114,24 @@ static VALUE clips_environment_deftemplate_static_is_deletable(VALUE self, VALUE
 	return clips_environment_deftemplate_is_deletable(rbDeftemplate);
 }
 
+static VALUE clips_environment_deftemplate_is_implied(VALUE self)
+{
+	Deftemplate *deftemplate;
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
+
+	if (deftemplate->implied) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_deftemplate_static_is_implied(VALUE self, VALUE rbDeftemplate)
+{
+	return clips_environment_deftemplate_is_implied(rbDeftemplate);
+}
+
 static VALUE clips_environment_deftemplate_slot_existp(VALUE self, VALUE slot_name)
 {
 	Deftemplate *deftemplate;
@@ -3099,6 +3121,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDeftemplate, "slot_multip", clips_environment_deftemplate_slot_multip, 1);
 	rb_define_singleton_method(rbDeftemplate, "slot_defaultp", clips_environment_deftemplate_static_slot_defaultp, 2);
 	rb_define_method(rbDeftemplate, "slot_defaultp", clips_environment_deftemplate_slot_defaultp, 1);
+	rb_define_singleton_method(rbDeftemplate, "is_implied", clips_environment_deftemplate_static_is_implied, 1);
+	rb_define_method(rbDeftemplate, "is_implied", clips_environment_deftemplate_is_implied, 0);
 
 	VALUE rbDefmodule = rb_define_class_under(rbEnvironment, "Defmodule", rb_cObject);
 	rb_define_alloc_func(rbDefmodule, defmodule_alloc);
