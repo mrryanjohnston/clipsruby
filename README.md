@@ -542,11 +542,11 @@ symbol, string, or Defmodule object in order to only get Deftemplates
 in that Defmodule. If you do not, it will return all Deftemplate names in all modules.
 
 ```ruby
-CLIPS::Environment.get_deftemplate_list
+CLIPS::Environment.get_deftemplate_list(env)
 env.get_deftemplate_list
-CLIPS::Environment.get_deftemplate_list(:MAIN)
+CLIPS::Environment.get_deftemplate_list(env, :MAIN)
 env.get_deftemplate_list(:MAIN)
-CLIPS::Environment.get_deftemplate_list(defmodule)
+CLIPS::Environment.get_deftemplate_list(env, defmodule)
 env.get_deftemplate_list(defmodule)
 ```
 
@@ -558,12 +558,22 @@ symbol, string, or Defmodule object in order to only get Defrules
 in that Defmodule. If you do not, it will return all Defrule names in all modules.
 
 ```ruby
-CLIPS::Environment.get_defrule_list
+CLIPS::Environment.get_defrule_list(env)
 env.get_defrule_list
-CLIPS::Environment.get_defrule_list(:MAIN)
+CLIPS::Environment.get_defrule_list(env, :MAIN)
 env.get_defrule_list(:MAIN)
-CLIPS::Environment.get_defrule_list(defmodule)
+CLIPS::Environment.get_defrule_list(env, defmodule)
 env.get_defrule_list(defmodule)
+```
+
+### `CLIPS::Environment.get_defmodule_list`
+### `CLIPS::Environment#get_defmodule_list`
+
+Return an array of Defmodule names as symbols in the environment.
+
+```ruby
+CLIPS::Environment.get_defmodule_list(env)
+env.get_defmodule_list
 ```
 
 ### `CLIPS::Environment.find_deftemplate`

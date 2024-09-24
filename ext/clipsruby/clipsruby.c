@@ -2142,6 +2142,26 @@ static VALUE clips_environment_defmodule_static_get_defrule_list(VALUE self, VAL
 	return clips_environment_defmodule_get_defrule_list(rbDefmodule);
 }
 
+static VALUE clips_environment_get_defmodule_list(VALUE self)
+{
+	Environment *env;
+	CLIPSValue value;
+	VALUE out;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	GetDefmoduleList(env, &value);
+
+	CLIPSValue_to_VALUE(&value, &out, &self);
+
+	return out;
+}
+
+static VALUE clips_environment_static_get_defmodule_list(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_get_defmodule_list(rbEnvironment);
+}
+
 static VALUE clips_environment_defrule_name(VALUE self)
 {
 	Defrule *defrule;
@@ -2159,10 +2179,18 @@ static VALUE clips_environment_defrule_static_name(VALUE self, VALUE rbDefrule)
 static VALUE clips_environment_defrule_pp_form(VALUE self)
 {
 	Defrule *defrule;
+	const char *pp_form;
 
 	TypedData_Get_Struct(self, Defrule, &Defrule_type, defrule);
 
-	return rb_str_new2(DefrulePPForm(defrule));
+	pp_form = DefrulePPForm(defrule);
+
+	if (pp_form == NULL) {
+		rb_warn("defrule did not have pp_form. This can happen if the defrule was loaded from a binary file.");
+		return Qnil;
+	} else {
+		return rb_str_new2(pp_form);
+	}
 }
 
 static VALUE clips_environment_defrule_static_pp_form(VALUE self, VALUE rbDefrule)
@@ -3121,6 +3149,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "get_deftemplate_list", clips_environment_get_deftemplate_list, -1);
 	rb_define_singleton_method(rbEnvironment, "get_defrule_list", clips_environment_static_get_defrule_list, -1);
 	rb_define_method(rbEnvironment, "get_defrule_list", clips_environment_get_defrule_list, -1);
+	rb_define_singleton_method(rbEnvironment, "get_defmodule_list", clips_environment_static_get_defmodule_list, 1);
+	rb_define_method(rbEnvironment, "get_defmodule_list", clips_environment_get_defmodule_list, 0);
 	rb_define_singleton_method(rbEnvironment, "find_deffacts", clips_environment_static_find_deffacts, 2);
 	rb_define_method(rbEnvironment, "find_deffacts", clips_environment_find_deffacts, 1);
 	rb_define_singleton_method(rbEnvironment, "watch", clips_environment_static_watch, 2);

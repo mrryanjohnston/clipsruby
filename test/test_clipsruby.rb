@@ -280,6 +280,12 @@ class ClipsrubyTest < Minitest::Test
       env.find_defrule(:foo).pp_form
   end
 
+  def test_defrule_pp_form_from_binary_load
+    env = CLIPS.create_environment
+    env.bload("test/bload.bin")
+    assert_nil env.find_defrule(:do).pp_form
+  end
+
   def test_defrule_is_deletable
     env = CLIPS.create_environment
     env.build("(defrule a =>)")
@@ -374,6 +380,14 @@ class ClipsrubyTest < Minitest::Test
       env.get_fact_list(defmodule).map(&:to_h)
     assert_equal [fact1.to_h, fact2.to_h],
       defmodule.get_fact_list.map(&:to_h)
+  end
+
+  def test_get_demodule_list
+    env = CLIPS.create_environment
+    env.build("(defmodule my_module (export ?ALL))")
+    env.build("(defmodule other (export ?ALL))")
+    assert_equal [:MAIN, :my_module, :other],
+      env.get_defmodule_list
   end
 
   def test_find_deftemplate_name_pp_form
