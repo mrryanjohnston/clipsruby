@@ -1959,6 +1959,40 @@ static VALUE clips_environment_static_find_deftemplate(VALUE self, VALUE rbEnvir
 	return clips_environment_find_deftemplate(rbEnvironment, deftemplate_name);
 }
 
+static VALUE clips_environment_find_defclass(VALUE self, VALUE defclass_name)
+{
+	Environment *env;
+	Defclass *class;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch (TYPE(defclass_name)) {
+		case T_STRING:
+			class = FindDefclass(env, StringValueCStr(defclass_name));
+			break;
+		case T_SYMBOL:
+			class = FindDefclass(env, rb_id2name(SYM2ID(defclass_name)));
+			break;
+                default:
+			rb_warn("defclass name must be a symbol or string");
+			return Qnil;
+        }
+
+	if (class == NULL) {
+		return Qnil;
+	} else {
+		VALUE rbDefclass;
+		rbDefclass = TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Defclass")), &Defclass_type, class);
+		rb_iv_set(rbDefclass, "@environment", self);
+		return rbDefclass;
+	}
+}
+
+static VALUE clips_environment_static_find_defclass(VALUE self, VALUE rbEnvironment, VALUE defclass_name)
+{
+	return clips_environment_find_defclass(rbEnvironment, defclass_name);
+}
+
 static VALUE clips_environment_deftemplate_name(VALUE self)
 {
 	Deftemplate *deftemplate;
@@ -2193,6 +2227,74 @@ static VALUE clips_environment_static_get_deftemplate_list(int argc, VALUE *argv
 	return out;
 }
 
+static VALUE clips_environment_get_defclass_list(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE defmodule_or_defmodule_name;
+	Environment *env;
+	Defmodule *module;
+	CLIPSValue value;
+	VALUE out;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "01", &defmodule_or_defmodule_name);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_NIL:
+			module = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			TypedData_Get_Struct(
+				clips_environment_find_defmodule(rbEnvironment, defmodule_or_defmodule_name),
+				Defmodule, &Defmodule_type, module);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(defmodule_or_defmodule_name, Defmodule, &Defmodule_type, module);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+	GetDefclassList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_static_get_defclass_list(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, defmodule_or_defmodule_name;
+	Environment *env;
+	Defmodule *module;
+	CLIPSValue value;
+	VALUE out;
+
+	rb_scan_args(argc, argv, "11", &rbEnvironment, &defmodule_or_defmodule_name);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_NIL:
+			module = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			TypedData_Get_Struct(
+				clips_environment_find_defmodule(rbEnvironment, defmodule_or_defmodule_name),
+				Defmodule, &Defmodule_type, module);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(defmodule_or_defmodule_name, Defmodule, &Defmodule_type, module);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+	GetDefclassList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
 static VALUE clips_environment_get_defrule_list(int argc, VALUE *argv, VALUE rbEnvironment) {
 	VALUE defmodule_or_defmodule_name;
 	Environment *env;
@@ -2331,6 +2433,30 @@ static VALUE clips_environment_defmodule_get_fact_list(VALUE self)
 static VALUE clips_environment_defmodule_static_get_fact_list(VALUE self, VALUE rbDefmodule)
 {
 	return clips_environment_defmodule_get_fact_list(rbDefmodule);
+}
+
+static VALUE clips_environment_defmodule_get_defclass_list(VALUE self)
+{
+	Defmodule *module;
+	Environment *env;
+	CLIPSValue value;
+	VALUE out;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	GetDefclassList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_defmodule_static_get_defclass_list(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_get_defclass_list(rbDefmodule);
 }
 
 static VALUE clips_environment_defmodule_get_deftemplate_list(VALUE self)
@@ -3378,6 +3504,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "find_defmodule", clips_environment_find_defmodule, 1);
 	rb_define_singleton_method(rbEnvironment, "find_deftemplate", clips_environment_static_find_deftemplate, 2);
 	rb_define_method(rbEnvironment, "find_deftemplate", clips_environment_find_deftemplate, 1);
+	rb_define_singleton_method(rbEnvironment, "find_defclass", clips_environment_static_find_defclass, 2);
+	rb_define_method(rbEnvironment, "find_defclass", clips_environment_find_defclass, 1);
 	rb_define_singleton_method(rbEnvironment, "get_current_module", clips_environment_static_get_current_module, 1);
 	rb_define_method(rbEnvironment, "get_current_module", clips_environment_get_current_module, 0);
 	rb_define_singleton_method(rbEnvironment, "set_current_module", clips_environment_static_set_current_module, 2);
@@ -3386,6 +3514,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "get_fact_list", clips_environment_get_fact_list, -1);
 	rb_define_singleton_method(rbEnvironment, "get_deftemplate_list", clips_environment_static_get_deftemplate_list, -1);
 	rb_define_method(rbEnvironment, "get_deftemplate_list", clips_environment_get_deftemplate_list, -1);
+	rb_define_singleton_method(rbEnvironment, "get_defclass_list", clips_environment_static_get_defclass_list, -1);
+	rb_define_method(rbEnvironment, "get_defclass_list", clips_environment_get_defclass_list, -1);
 	rb_define_singleton_method(rbEnvironment, "get_defrule_list", clips_environment_static_get_defrule_list, -1);
 	rb_define_method(rbEnvironment, "get_defrule_list", clips_environment_get_defrule_list, -1);
 	rb_define_singleton_method(rbEnvironment, "get_defmodule_list", clips_environment_static_get_defmodule_list, 1);
@@ -3511,6 +3641,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefmodule, "pp_form", clips_environment_defmodule_pp_form, 0);
 	rb_define_singleton_method(rbDefmodule, "set_current", clips_environment_defmodule_static_set_current, 1);
 	rb_define_method(rbDefmodule, "set_current", clips_environment_defmodule_set_current, 0);
+	rb_define_singleton_method(rbDefmodule, "get_defclass_list", clips_environment_defmodule_static_get_defclass_list, 1);
+	rb_define_method(rbDefmodule, "get_defclass_list", clips_environment_defmodule_get_defclass_list, 0);
 	rb_define_singleton_method(rbDefmodule, "get_fact_list", clips_environment_defmodule_static_get_fact_list, 1);
 	rb_define_method(rbDefmodule, "get_fact_list", clips_environment_defmodule_get_fact_list, 0);
 	rb_define_singleton_method(rbDefmodule, "get_deftemplate_list", clips_environment_defmodule_static_get_deftemplate_list, 1);

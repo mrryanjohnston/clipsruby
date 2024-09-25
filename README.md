@@ -634,6 +634,22 @@ CLIPS::Environment::Defmodule.get_fact_list(defmodule)
 defmodule.get_fact_list
 ```
 
+### `CLIPS::Environment.get_defclass_list`
+### `CLIPS::Environment#get_defclass_list`
+
+Return an array of Defclass names as symbols in the environment. Pass an argument of a
+symbol, string, or Defmodule object in order to only get Defclasss
+in that Defmodule. If you do not, it will return all Defclass names in all modules.
+
+```ruby
+CLIPS::Environment.get_defclass_list(env)
+env.get_defclass_list
+CLIPS::Environment.get_defclass_list(env, :MAIN)
+env.get_defclass_list(:MAIN)
+CLIPS::Environment.get_defclass_list(env, defmodule)
+env.get_defclass_list(defmodule)
+```
+
 ### `CLIPS::Environment.get_deftemplate_list`
 ### `CLIPS::Environment#get_deftemplate_list`
 
@@ -684,6 +700,16 @@ Finds a deftemplate by name and returns a CLIPS::Environment::Deftemplate object
 ```ruby
 CLIPS::Environment.find_deftemplate(:a)
 env.find_deftemplate("foo")
+```
+
+### `CLIPS::Environment.find_defclass`
+### `CLIPS::Environment#find_defclass`
+
+Finds a defclass by name and returns a CLIPS::Environment::Defclass object
+
+```ruby
+CLIPS::Environment.find_defclass(:a)
+env.find_defclass("foo")
 ```
 
 ### `CLIPS::Environment::Deftemplate.name`
@@ -872,6 +898,16 @@ on the Deftemplate. Possible return values are as follows:
 ```ruby
 CLIPS::Environment::Deftemplate.slot_defaultp(deftemplate, :foo)
 deftemplate.slot_defaultp('bar')
+```
+
+### `CLIPS::Environment::Defmodule.get_defclass_list`
+### `CLIPS::Environment::Defmodule#get_defclass_list`
+
+Return an array of Defclass names as symbols in the Defmodule
+
+```ruby
+CLIPS::Environment::Defmodule.get_defclass_list(defmodule)
+defmodule.get_defclass_list
 ```
 
 ### `CLIPS::Environment::Defmodule.get_deftemplate_list`

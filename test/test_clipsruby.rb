@@ -454,6 +454,66 @@ class ClipsrubyTest < Minitest::Test
       env.find_defmodule(:my_module).get_deftemplate_list
   end
 
+  def test_find_defclass_get_defclass_list
+    env = CLIPS.create_environment
+    env.build("(defclass foo (is-a USER))")
+    env.build("(defmodule my_module (export ?ALL))")
+    env.build("(defclass bar (is-a USER))")
+    env.build("(defclass baz (is-a USER))")
+    defclass = env.find_defclass(:bar)
+    assert defclass
+    assert_equal :bar,
+      defclass.name
+    assert_equal [
+      :"MAIN::FLOAT",
+      :"MAIN::INTEGER",
+      :"MAIN::SYMBOL",
+      :"MAIN::STRING",
+      :"MAIN::MULTIFIELD",
+      :"MAIN::EXTERNAL-ADDRESS",
+      :"MAIN::FACT-ADDRESS",
+      :"MAIN::INSTANCE-ADDRESS",
+      :"MAIN::INSTANCE-NAME",
+      :"MAIN::OBJECT",
+      :"MAIN::PRIMITIVE",
+      :"MAIN::NUMBER",
+      :"MAIN::LEXEME",
+      :"MAIN::ADDRESS",
+      :"MAIN::INSTANCE",
+      :"MAIN::USER",
+      :"MAIN::foo",
+      :"my_module::bar",
+      :"my_module::baz"
+    ],
+      env.get_defclass_list
+    assert_equal [
+      :FLOAT,
+      :INTEGER,
+      :SYMBOL,
+      :STRING,
+      :MULTIFIELD,
+      :"EXTERNAL-ADDRESS",
+      :"FACT-ADDRESS",
+      :"INSTANCE-ADDRESS",
+      :"INSTANCE-NAME",
+      :OBJECT,
+      :PRIMITIVE,
+      :NUMBER,
+      :LEXEME,
+      :ADDRESS,
+      :INSTANCE,
+      :USER,
+      :foo
+    ],
+      env.get_defclass_list(env.find_defmodule(:MAIN))
+    assert_equal [ :bar, :baz ],
+      env.get_defclass_list(:my_module)
+    assert_equal [ :bar, :baz ],
+      env.get_defclass_list('my_module')
+    assert_equal [ :bar, :baz ],
+      env.find_defmodule(:my_module).get_defclass_list
+  end
+
   def test_get_defrule_list
     env = CLIPS.create_environment
     env.build("(defrule runs-once =>)")
