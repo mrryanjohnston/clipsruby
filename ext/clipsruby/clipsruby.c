@@ -110,6 +110,19 @@ static VALUE clips_environment_deftemplate_static_defmodule_name(VALUE self, VAL
 	return clips_environment_deftemplate_defmodule_name(rbDeftemplate);
 }
 
+static VALUE clips_environment_defrule_defmodule_name(VALUE self)
+{
+	Defrule *rule;
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, rule);
+
+	return ID2SYM(rb_intern(DefruleModule(rule)));
+}
+
+static VALUE clips_environment_defrule_static_defmodule_name(VALUE self, VALUE rbDefrule)
+{
+	return clips_environment_defrule_defmodule_name(rbDefrule);
+}
 
 void environment_free(void *data)
 {
@@ -3316,6 +3329,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefrule, "remove_break", clips_environment_defrule_remove_break, 0);
 	rb_define_singleton_method(rbDefrule, "salience", clips_environment_defrule_static_salience, 1);
 	rb_define_method(rbDefrule, "salience", clips_environment_defrule_salience, 0);
+	rb_define_singleton_method(rbDefrule, "defmodule_name", clips_environment_defrule_static_defmodule_name, 1);
+	rb_define_method(rbDefrule, "defmodule_name", clips_environment_defrule_defmodule_name, 0);
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 }

@@ -270,6 +270,17 @@ class ClipsrubyTest < Minitest::Test
       env.find_defrule(:"runs-once-also").name
   end
 
+  def test_defrule_defmodule_name
+    env = CLIPS.create_environment
+    env.build("(defrule a =>)")
+    assert_equal :MAIN,
+      env.find_defrule(:a).defmodule_name
+    env.build("(defmodule my_module (export ?ALL))")
+    env.build("(defrule b =>)")
+    assert_equal :my_module,
+      env.find_defrule(:b).defmodule_name
+  end
+
   def test_defrule_pp_form
     env = CLIPS.create_environment
     env.build("(defrule a =>)")

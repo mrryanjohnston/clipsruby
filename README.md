@@ -424,6 +424,16 @@ CLIPS::Environment::Defrule.name(defrule)
 defrule.name
 ```
 
+### `CLIPS::Environment::Defrule.defmodule_name`
+### `CLIPS::Environment::Defrule#defmodule_name`
+
+Returns the name of the defmodule in which the defrule is defined
+
+```ruby
+CLIPS::Environment::Defrule.defmodule_name(defrule)
+defrule.defmodule_name
+```
+
 ### `CLIPS::Environment::Defrule.is_deletable`
 ### `CLIPS::Environment::Defrule#is_deletable`
 
