@@ -37,7 +37,6 @@ static const rb_data_type_t Defmodule_type = {
 	.flags = RUBY_TYPED_FREE_IMMEDIATELY
 };
 
-
 size_t defrule_size(const void *data)
 {
 	return sizeof(Defrule);
@@ -50,6 +49,18 @@ static const rb_data_type_t Defrule_type = {
 	.flags = RUBY_TYPED_FREE_IMMEDIATELY
 };
 
+size_t defclass_size(const void *data)
+{
+	return sizeof(Defclass);
+}
+
+static const rb_data_type_t Defclass_type = {
+	.function = {
+		.dsize = defclass_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 size_t fact_size(const void *data)
 {
 	return sizeof(Fact);
@@ -58,6 +69,18 @@ size_t fact_size(const void *data)
 static const rb_data_type_t Fact_type = {
 	.function = {
 		.dsize = fact_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
+size_t instance_size(const void *data)
+{
+	return sizeof(Instance);
+}
+
+static const rb_data_type_t Instance_type = {
+	.function = {
+		.dsize = instance_size
 	},
 	.flags = RUBY_TYPED_FREE_IMMEDIATELY
 };
@@ -173,6 +196,11 @@ VALUE deftemplate_alloc(VALUE self)
 	return TypedData_Wrap_Struct(self, &Deftemplate_type, NULL);
 }
 
+VALUE defclass_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Defclass_type, NULL);
+}
+
 VALUE defrule_alloc(VALUE self)
 {
 	return TypedData_Wrap_Struct(self, &Defrule_type, NULL);
@@ -181,6 +209,11 @@ VALUE defrule_alloc(VALUE self)
 VALUE fact_alloc(VALUE self)
 {
 	return TypedData_Wrap_Struct(self, &Fact_type, NULL);
+}
+
+VALUE instance_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Instance_type, NULL);
 }
 
 VALUE environment_alloc(VALUE self)
@@ -216,6 +249,199 @@ static VALUE clips_environment_assert_string(VALUE self, VALUE string)
 static VALUE clips_environment_static_assert_string(VALUE self, VALUE rbEnvironment, VALUE string)
 {
 	return clips_environment_assert_string(rbEnvironment, string);
+}
+
+static VALUE clips_environment_defclass_name(VALUE self)
+{
+	Defclass *defclass;
+
+	TypedData_Get_Struct(self, Defclass, &Defclass_type, defclass);
+
+	return ID2SYM(rb_intern(DefclassName(defclass)));
+}
+
+static VALUE clips_environment_defclass_static_name(VALUE self, VALUE rbDefclass)
+{
+	return clips_environment_defclass_name(rbDefclass);
+}
+
+static VALUE clips_environment_defclass_defmodule_name(VALUE self)
+{
+	Defclass *defclass;
+
+	TypedData_Get_Struct(self, Defclass, &Defclass_type, defclass);
+
+	return ID2SYM(rb_intern(DefclassModule(defclass)));
+}
+
+static VALUE clips_environment_defclass_static_defmodule_name(VALUE self, VALUE rbDefclass)
+{
+	return clips_environment_defclass_defmodule_name(rbDefclass);
+}
+
+static VALUE clips_environment_defclass_pp_form(VALUE self)
+{
+	Defclass *defclass;
+
+	TypedData_Get_Struct(self, Defclass, &Defclass_type, defclass);
+
+	return rb_str_new2(DefclassPPForm(defclass));
+}
+
+static VALUE clips_environment_defclass_static_pp_form(VALUE self, VALUE rbDefclass)
+{
+	return clips_environment_defclass_pp_form(rbDefclass);
+}
+
+static VALUE clips_environment_make_instance(VALUE self, VALUE string)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	Instance *instance = MakeInstance(env, StringValueCStr(string));
+
+	if (instance == NULL) {
+		return Qnil;
+	}
+
+	VALUE rb_instance =
+		TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Instance")), &Instance_type, instance);
+
+	rb_iv_set(rb_instance, "@environment", self);
+
+	return rb_instance;
+}
+
+static VALUE clips_environment_static_make_instance(VALUE self, VALUE rbEnvironment, VALUE string)
+{
+	return clips_environment_make_instance(rbEnvironment, string);
+}
+
+static VALUE clips_environment_instance_unmake(VALUE self)
+{
+	Instance *instance;
+
+	TypedData_Get_Struct(self, Instance, &Instance_type, instance);
+
+	switch (UnmakeInstance(instance)) {
+		case UIE_NO_ERROR:
+			break;
+		case UIE_NULL_POINTER_ERROR:
+			rb_warn("could not unmake instance; null pointer error. This could be a bug in clipsruby!");
+			return Qfalse;
+		case UIE_COULD_NOT_DELETE_ERROR:
+			rb_warn("could not unmake instance! is pattern matching currently happening with this instance?");
+			return Qfalse;
+		case UIE_DELETED_ERROR:
+			rb_warn("could not unmake instance! instance is already deleted");
+			return Qfalse;
+		case UIE_RULE_NETWORK_ERROR:
+			rb_warn("could not unmake instance! An error occurs while the unmaking was being processed in the rule network");
+			return Qfalse;
+        }
+
+	return Qtrue;
+}
+
+static VALUE clips_environment_instance_static_unmake(VALUE self, VALUE rbInstance)
+{
+	return clips_environment_instance_unmake(rbInstance);
+}
+
+static VALUE clips_environment_instance_delete(VALUE self)
+{
+	Instance *instance;
+
+	TypedData_Get_Struct(self, Instance, &Instance_type, instance);
+
+	switch (DeleteInstance(instance)) {
+		case UIE_NO_ERROR:
+			break;
+		case UIE_NULL_POINTER_ERROR:
+			rb_warn("could not delete instance; null pointer error. This could be a bug in clipsruby!");
+			return Qfalse;
+		case UIE_COULD_NOT_DELETE_ERROR:
+			rb_warn("could not delete instance! is pattern matching currently happening with this instance?");
+			return Qfalse;
+		case UIE_DELETED_ERROR:
+			rb_warn("could not delete instance! instance is already deleted");
+			return Qfalse;
+		case UIE_RULE_NETWORK_ERROR:
+			rb_warn("could not delete instance! An error occurs while the unmaking was being processed in the rule network");
+			return Qfalse;
+        }
+
+	return Qtrue;
+}
+
+static VALUE clips_environment_instance_static_delete(VALUE self, VALUE rbInstance)
+{
+	return clips_environment_instance_delete(rbInstance);
+}
+
+static VALUE clips_environment_instance_class(VALUE self)
+{
+	Defclass *defclass;
+	Instance *instance;
+	VALUE rbEnvironment, rb_defclass;
+
+	rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Instance, &Instance_type, instance);
+
+	defclass = InstanceClass(instance);
+
+	rb_defclass =
+		TypedData_Wrap_Struct(rb_const_get(rb_obj_class(rbEnvironment), rb_intern("Defclass")), &Defclass_type, defclass);
+
+	rb_iv_set(rb_defclass, "@environment", rbEnvironment);
+
+	return rb_defclass;
+}
+
+static VALUE clips_environment_instance_static_class(VALUE self, VALUE rbInstance)
+{
+	return clips_environment_instance_class(rbInstance);
+}
+
+static VALUE clips_environment_instance_name(VALUE self)
+{
+	Instance *instance;
+
+	TypedData_Get_Struct(self, Instance, &Instance_type, instance);
+
+	return ID2SYM(rb_intern(InstanceName(instance)));
+}
+
+static VALUE clips_environment_instance_static_name(VALUE self, VALUE rbInstance)
+{
+	return clips_environment_instance_name(rbInstance);
+}
+
+static VALUE clips_environment_instance_pp_form(VALUE self)
+{
+	Environment *env;
+	Instance *instance;
+	StringBuilder *sb;
+	VALUE toReturn;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	sb = CreateStringBuilder(env, 0);
+
+	TypedData_Get_Struct(self, Instance, &Instance_type, instance);
+
+	InstancePPForm(instance, sb);
+	toReturn = rb_str_new2(sb->contents);
+	SBDispose(sb);
+
+	return toReturn;
+}
+
+static VALUE clips_environment_instance_static_pp_form(VALUE self, VALUE rbInstance)
+{
+	return clips_environment_instance_pp_form(rbInstance);
 }
 
 static VALUE clips_environment_build(VALUE self, VALUE string)
@@ -3232,6 +3458,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "unwatch_focus", clips_environment_unwatch_focus, 0);
 	rb_define_singleton_method(rbEnvironment, "get_watch_state", clips_environment_static_get_watch_state, 2);
 	rb_define_method(rbEnvironment, "get_watch_state", clips_environment_get_watch_state, 1);
+	rb_define_singleton_method(rbEnvironment, "make_instance", clips_environment_static_make_instance, 2);
+	rb_define_method(rbEnvironment, "make_instance", clips_environment_make_instance, 1);
 
 	VALUE rbDeffacts = rb_define_class_under(rbEnvironment, "Deffacts", rb_cObject);
 	rb_define_alloc_func(rbDeffacts, deffacts_alloc);
@@ -3332,5 +3560,25 @@ void Init_clipsruby(void)
 	rb_define_singleton_method(rbDefrule, "defmodule_name", clips_environment_defrule_static_defmodule_name, 1);
 	rb_define_method(rbDefrule, "defmodule_name", clips_environment_defrule_defmodule_name, 0);
 
+	VALUE rbDefclass = rb_define_class_under(rbEnvironment, "Defclass", rb_cObject);
+	rb_define_alloc_func(rbDefclass, defclass_alloc);
+	rb_define_singleton_method(rbDefclass, "name", clips_environment_defclass_static_name, 1);
+	rb_define_method(rbDefclass, "name", clips_environment_defclass_name, 0);
+	rb_define_singleton_method(rbDefclass, "defmodule_name", clips_environment_defclass_static_defmodule_name, 1);
+	rb_define_method(rbDefclass, "defmodule_name", clips_environment_defclass_defmodule_name, 0);
+	rb_define_singleton_method(rbDefclass, "pp_form", clips_environment_defclass_static_pp_form, 1);
+	rb_define_method(rbDefclass, "pp_form", clips_environment_defclass_pp_form, 0);
+
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
+	rb_define_alloc_func(rbInstance, instance_alloc);
+	rb_define_singleton_method(rbInstance, "unmake", clips_environment_instance_static_unmake, 1);
+	rb_define_method(rbInstance, "unmake", clips_environment_instance_unmake, 0);
+	rb_define_singleton_method(rbInstance, "delete", clips_environment_instance_static_delete, 1);
+	rb_define_method(rbInstance, "delete", clips_environment_instance_delete, 0);
+	rb_define_singleton_method(rbInstance, "_class", clips_environment_instance_static_class, 1);
+	rb_define_method(rbInstance, "_class", clips_environment_instance_class, 0);
+	rb_define_singleton_method(rbInstance, "name", clips_environment_instance_static_name, 1);
+	rb_define_method(rbInstance, "name", clips_environment_instance_name, 0);
+	rb_define_singleton_method(rbInstance, "pp_form", clips_environment_instance_static_pp_form, 1);
+	rb_define_method(rbInstance, "pp_form", clips_environment_instance_pp_form, 0);
 }

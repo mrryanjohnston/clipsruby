@@ -155,6 +155,16 @@ fact = CLIPS::Environment.assert_hash(env, :my_deftemplate, a: 1, b: "asdf", c: 
 fact2 = env.assert_hash(:my_deftemplate, d: 4.5, e: :asdf)
 ```
 
+### `CLIPS::Environment.make_instance`
+### `CLIPS::Environment#make_instance`
+
+Make a string as an Instance in the CLIPS environment.
+
+```ruby
+instance = CLIPS::Environment.make_instance(env, "(of USER)")
+instance2 = env.make_instance("(of USER)")
+```
+
 ### `CLIPS::Environment.find_fact`
 ### `CLIPS::Environment#find_fact`
 
@@ -402,6 +412,86 @@ Will not work with non-deftemplate facts!
 ```ruby
 CLIPS::Environment::Fact.modify(fact, bar: 123)
 fact.modify(foo: "my new foo!")
+```
+
+### `CLIPS::Environment::Instance.unmake`
+### `CLIPS::Environment::Instance#unmake`
+
+Unmakes an instance in the environment, deleting it.
+
+```ruby
+CLIPS::Environment::Instance.unmake(instance)
+instance.unmake
+```
+
+### `CLIPS::Environment::Instance.delete`
+### `CLIPS::Environment::Instance#delete`
+
+Deletes an instance in the environment.
+
+```ruby
+CLIPS::Environment::Instance.delete(instance)
+instance.delete
+```
+
+### `CLIPS::Environment::Instance.name`
+### `CLIPS::Environment::Instance#name`
+
+Returns the name of an Instance as a symbol
+
+```ruby
+CLIPS::Environment::Instance.name(instance)
+instance.name
+```
+
+### `CLIPS::Environment::Instance.pp_form`
+### `CLIPS::Environment::Instance#pp_form`
+
+Returns a pretty printed string representation of an Instance
+
+```ruby
+CLIPS::Environment::Instance.pp_form(instance)
+instance.pp_form
+```
+
+### `CLIPS::Environment::Instance._class`
+### `CLIPS::Environment::Instance#_class`
+
+Returns the Defclass of an Instance
+
+```ruby
+CLIPS::Environment::Instance._class(instance)
+instance._class
+```
+
+### `CLIPS::Environment::Defclass.name`
+### `CLIPS::Environment::Defclass#name`
+
+Returns the name of an Defclass as a symbol
+
+```ruby
+CLIPS::Environment::Defclass.name(defclass)
+defclass.name
+```
+
+### `CLIPS::Environment::Defclass.pp_form`
+### `CLIPS::Environment::Defclass#pp_form`
+
+Returns a pretty printed string representation of an Defclass
+
+```ruby
+CLIPS::Environment::Defclass.pp_form(defclass)
+defclass.pp_form
+```
+
+### `CLIPS::Environment::Defclass.defmodule_name`
+### `CLIPS::Environment::Defclass#defmodule_name`
+
+Returns the name of the defmodule in which the defclass is defined
+
+```ruby
+CLIPS::Environment::Defclass.defmodule_name(defclass)
+defclass.defmodule_name
 ```
 
 ### `CLIPS::Environment.find_defrule`

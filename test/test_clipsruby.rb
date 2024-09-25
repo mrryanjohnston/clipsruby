@@ -745,4 +745,29 @@ class ClipsrubyTest < Minitest::Test
     assert_nil env.unwatch(:focus)
     refute env.get_watch_state(:focus)
   end
+
+  def test_defclass_name_defmodule_pp_form_make_instance_unmake_class_name_pp_form
+    env = CLIPS.create_environment
+    env.build("(defclass my-class (is-a USER))")
+    instance = env.make_instance("([foo] of my-class)")
+    assert instance
+    assert 1,
+      env._eval("(find-all-instances ((?i my-class)) TRUE)").length
+    refute env.make_instance("(of non-existant)")
+    assert instance._class
+    assert_equal :"my-class",
+      instance._class.name
+    assert_equal :MAIN,
+      instance._class.defmodule_name
+    assert_equal "(defclass MAIN::my-class\n   (is-a USER))\n",
+      instance._class.pp_form
+    assert_equal :foo,
+      instance.name
+    assert_equal "[foo] of my-class",
+      instance.pp_form
+    assert instance.unmake
+    assert 0,
+      env._eval("(find-all-instances ((?i my-class)) TRUE)").length
+    refute instance.unmake
+  end
 end
