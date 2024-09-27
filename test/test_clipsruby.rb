@@ -1,5 +1,6 @@
 require "minitest/autorun"
 require "clipsruby"
+require_relative "clips_environment_add_udf"
 
 class ClipsrubyTest < Minitest::Test
   def test_eval_to_h
@@ -14,6 +15,20 @@ class ClipsrubyTest < Minitest::Test
       env._eval("(create$ 1 \"2\" four)")
     assert_equal({ implied: [ :five, 6 ] },
       env._eval("(assert (foo five 6))").to_h)
+  end
+
+  def test_add_udf
+    env = CLIPSEnvironmentWithUdf.new
+    env.add_udf(:add)
+    assert_equal 3,
+      env._eval("(add 1)")
+    assert_equal 2,
+      env._eval("(add 1 1)")
+    env.add_udf(:subtract)
+    assert_equal(-1,
+      env._eval("(subtract 1)"))
+    assert_equal 0,
+      env._eval("(subtract 1 1)")
   end
 
   def test_build_assert_hash_to_h_deftemplate_name
@@ -393,7 +408,111 @@ class ClipsrubyTest < Minitest::Test
       defmodule.get_fact_list.map(&:to_h)
   end
 
-  def test_get_demodule_list
+  def test_get_instance_list
+    env = CLIPS.create_environment
+    env.build("(defclass MY-CLASS (is-a USER))")
+    env.build("(defclass MY-OTHER-CLASS (is-a USER))")
+    env.build("(defclass FOO (is-a MY-OTHER-CLASS))")
+    env.make_instance("(of MY-CLASS)")
+    env.make_instance("(of MY-CLASS)")
+    env.make_instance("(of MY-OTHER-CLASS)")
+    env.make_instance("(of FOO)")
+    refute env.get_instance_list(1)
+    refute env.get_instance_list(:non_existant_class)
+    assert_equal 4,
+      env.get_instance_list.length
+    assert_equal 2,
+      env.get_instance_list(:"MY-CLASS").length
+    assert_equal 2,
+      env.get_instance_list("MY-CLASS").length
+    assert_equal 1,
+      env.get_instance_list(:"MY-OTHER-CLASS").length
+    assert_equal 1,
+      env.get_instance_list("MY-OTHER-CLASS").length
+    assert_equal 1,
+      env.get_instance_list(:FOO).length
+    assert_equal 1,
+      env.get_instance_list("FOO").length
+    assert_equal 2,
+      env.get_instance_list(:"MY-OTHER-CLASS", true).length
+    assert_equal 2,
+      env.get_instance_list("MY-OTHER-CLASS", true).length
+    assert_equal 4,
+      CLIPS::Environment.get_instance_list(env).length
+    assert_equal 2,
+      CLIPS::Environment.get_instance_list(env, :"MY-CLASS").length
+    assert_equal 2,
+      CLIPS::Environment.get_instance_list(env, "MY-CLASS").length
+    assert_equal 1,
+      CLIPS::Environment.get_instance_list(env, :"MY-OTHER-CLASS").length
+    assert_equal 1,
+      CLIPS::Environment.get_instance_list(env, "MY-OTHER-CLASS").length
+    assert_equal 1,
+      CLIPS::Environment.get_instance_list(env, :FOO).length
+    assert_equal 1,
+      CLIPS::Environment.get_instance_list(env, "FOO").length
+    assert_equal 2,
+      CLIPS::Environment.get_instance_list(env, :"MY-OTHER-CLASS", true).length
+    assert_equal 2,
+      CLIPS::Environment.get_instance_list(env, "MY-OTHER-CLASS", true).length
+    defclass = env.find_defclass("MY-CLASS")
+    assert_equal 2,
+      env.get_instance_list(defclass).length
+    assert_equal 2,
+      CLIPS::Environment.get_instance_list(env, defclass).length
+    assert_equal 2,
+      defclass.get_instance_list.length
+    assert_equal 2,
+      CLIPS::Environment::Defclass.get_instance_list(defclass).length
+    defclass = env.find_defclass(:"MY-OTHER-CLASS")
+    assert_equal 1,
+      defclass.get_instance_list.length
+    assert_equal 2,
+      defclass.get_instance_list(true).length
+  end
+
+  def test_find_instance
+    env = CLIPS.create_environment
+    env.build("(defmodule my_module (export ?ALL))")
+    env.build("(defclass my_class (is-a USER))")
+    env.build("(defmodule other_module (import my_module ?ALL))")
+    env.make_instance("([foo] of my_class)")
+    defmodule = env.find_defmodule(:my_module) 
+    refute env.find_instance(:foo)
+    assert env.find_instance(:foo, nil, true)
+    env.set_current_module(env.find_defmodule(:MAIN))
+    refute env.find_instance(:foo)
+    env.set_current_module(env.find_defmodule(:my_module))
+    assert_equal :foo,
+      env.find_instance(:foo).name
+    assert_equal :foo,
+      env.find_instance('foo').name
+    refute env.find_instance(:foo, :MAIN)
+    assert env.find_instance(:foo, :my_module)
+    refute env.find_instance(:foo, :other_module)
+    assert env.find_instance(:foo, :other_module, true)
+    assert_equal :foo,
+      env.find_instance(:foo, :my_module).name
+    assert_equal :foo,
+      env.find_instance(:foo, 'my_module').name
+    refute env.find_instance(:foo, :MAIN)
+    refute env.find_instance(:foo, :MAIN, true)
+    assert env.find_instance(:foo, nil, true)
+    assert_equal :foo,
+      env.find_instance(:foo, defmodule).name
+    assert_equal :foo,
+      defmodule.find_instance(:foo).name
+    assert_equal :foo,
+      defmodule.find_instance('foo').name
+    assert_equal :foo,
+      CLIPS::Environment::Defmodule.find_instance(defmodule, :foo).name
+    assert_equal :foo,
+      CLIPS::Environment::Defmodule.find_instance(defmodule, 'foo').name
+    refute env.find_defmodule(:other_module).find_instance(:foo)
+    assert env.find_defmodule(:other_module).find_instance(:foo, true)
+  end
+
+  def test_get_defmodule_list
     env = CLIPS.create_environment
     env.build("(defmodule my_module (export ?ALL))")
     env.build("(defmodule other (export ?ALL))")

@@ -293,6 +293,92 @@ static VALUE clips_environment_defclass_static_pp_form(VALUE self, VALUE rbDefcl
 	return clips_environment_defclass_pp_form(rbDefclass);
 }
 
+static VALUE clips_environment_defclass_get_instance_list(int argc, VALUE *argv, VALUE rbDefclass)
+{
+	VALUE rbEnvironment, rbInstance, include_subclasses, returnArray;
+	Defclass *defclass;
+	Instance *theInstance;
+	UDFValue iterator;
+
+	rbEnvironment = rb_iv_get(rbDefclass, "@environment");
+
+	returnArray = rb_ary_new2(0);
+
+	rb_scan_args(argc, argv, "01", &include_subclasses);
+
+	TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
+
+	if (include_subclasses != Qtrue) {
+		for (
+			theInstance = GetNextInstanceInClass(defclass,NULL);
+			theInstance != NULL;
+			theInstance = GetNextInstanceInClass(defclass,theInstance)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	} else {
+		for (
+			theInstance = GetNextInstanceInClassAndSubclasses(&defclass,NULL,&iterator);
+			theInstance != NULL;
+			theInstance = GetNextInstanceInClassAndSubclasses(&defclass,theInstance,&iterator)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	}
+	return returnArray;
+}
+
+static VALUE clips_environment_defclass_static_get_instance_list(int argc, VALUE *argv, VALUE rbDefclass)
+{
+	VALUE rbEnvironment, rbInstance, include_subclasses, returnArray;
+	Defclass *defclass;
+	Instance *theInstance;
+	UDFValue iterator;
+
+	returnArray = rb_ary_new2(0);
+
+	rb_scan_args(argc, argv, "11", &rbDefclass, &include_subclasses);
+
+	rbEnvironment = rb_iv_get(rbDefclass, "@environment");
+
+	TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
+
+	if (include_subclasses != Qtrue) {
+		for (
+			theInstance = GetNextInstanceInClass(defclass,NULL);
+			theInstance != NULL;
+			theInstance = GetNextInstanceInClass(defclass,theInstance)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	} else {
+		for (
+			theInstance = GetNextInstanceInClassAndSubclasses(&defclass,NULL,&iterator);
+			theInstance != NULL;
+			theInstance = GetNextInstanceInClassAndSubclasses(&defclass,theInstance,&iterator)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	}
+	return returnArray;
+}
+
 static VALUE clips_environment_make_instance(VALUE self, VALUE string)
 {
 	Environment *env;
@@ -787,8 +873,13 @@ static void CLIPSValue_to_VALUE(CLIPSValue *from, VALUE *value, VALUE *rbEnviron
 
 			rb_iv_set(*value, "@environment", *rbEnvironment);
 			break;
-		case EXTERNAL_ADDRESS_TYPE:
 		case INSTANCE_ADDRESS_TYPE:
+			*value =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(*rbEnvironment), rb_intern("Instance")), &Instance_type, from->instanceValue);
+
+			rb_iv_set(*value, "@environment", *rbEnvironment);
+			break;
+		case EXTERNAL_ADDRESS_TYPE:
 		default:
 			WriteString(env,STDERR,"Unsupported data type returned from function\n");
 			*value = Qnil;
@@ -839,8 +930,13 @@ static void UDFValue_to_VALUE(UDFValue *from, VALUE *value, VALUE *rbEnvironment
 
 			rb_iv_set(*value, "@environment", *rbEnvironment);
 			break;
-		case EXTERNAL_ADDRESS_TYPE:
 		case INSTANCE_ADDRESS_TYPE:
+			*value =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(*rbEnvironment), rb_intern("Instance")), &Instance_type, from->instanceValue);
+
+			rb_iv_set(*value, "@environment", *rbEnvironment);
+			break;
+		case EXTERNAL_ADDRESS_TYPE:
 		default:
 			WriteString(env,STDERR,"Unsupported data type returned from function\n");
 			*value = Qnil;
@@ -1925,6 +2021,223 @@ static VALUE clips_environment_static_find_defmodule(VALUE self, VALUE rbEnviron
 	return clips_environment_find_defmodule(rbEnvironment, defmodule_name);
 }
 
+static VALUE clips_environment_find_instance(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE instanceName, search_imports, rbInstance, rbDefmodule;
+	Defmodule *defmodule;
+	Environment *env;
+	Instance *instance;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "12", &instanceName, &rbDefmodule, &search_imports);
+
+	const char *cinstanceName;
+	switch(TYPE(instanceName))
+	{
+		case T_SYMBOL:
+			cinstanceName = rb_id2name(SYM2ID(instanceName));
+			break;
+		case T_STRING:
+			cinstanceName = StringValueCStr(instanceName);
+			break;
+		default:
+			rb_warn("instance name must be a String or a Symbol");
+			return Qnil;
+	}
+
+	switch (TYPE(rbDefmodule)) {
+		case T_NIL:
+			defmodule = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			rbDefmodule = clips_environment_find_defmodule(rbEnvironment, rbDefmodule);
+			if (rbDefmodule == Qnil) {
+				return Qnil;
+			}
+			TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, defmodule);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, defmodule);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+
+	instance = FindInstance(
+		env,
+		defmodule,
+		cinstanceName,
+		RTEST(search_imports));
+
+	if (instance == NULL) {
+		return Qnil;
+	} else {
+		rbInstance =
+			TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, instance);
+
+		rb_iv_set(rbInstance, "@environment", rbEnvironment);
+
+		return rbInstance;
+	}
+}
+
+static VALUE clips_environment_static_find_instance(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, instanceName, rbInstance, rbDefmodule, search_imports;
+	Defmodule *defmodule;
+	Environment *env;
+	Instance *instance;
+
+	rb_scan_args(argc, argv, "22", &rbEnvironment, &instanceName, &rbDefmodule, &search_imports);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	const char *cinstanceName;
+	switch(TYPE(instanceName))
+	{
+		case T_SYMBOL:
+			cinstanceName = rb_id2name(SYM2ID(instanceName));
+			break;
+		case T_STRING:
+			cinstanceName = StringValueCStr(instanceName);
+			break;
+		default:
+			rb_warn("instance name must be a String or a Symbol");
+			return Qnil;
+	}
+
+	switch (TYPE(rbDefmodule)) {
+		case T_NIL:
+			defmodule = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			rbDefmodule = clips_environment_find_defmodule(rbEnvironment, rbDefmodule);
+			if (rbDefmodule == Qnil) {
+				return Qnil;
+			}
+			TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, defmodule);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, defmodule);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+
+	instance = FindInstance(
+		env,
+		defmodule,
+		cinstanceName,
+		RTEST(search_imports));
+
+	if (instance == NULL) {
+		return Qnil;
+	} else {
+		rbInstance =
+			TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, instance);
+
+		rb_iv_set(rbInstance, "@environment", rbEnvironment);
+
+		return rbInstance;
+	}
+}
+
+static VALUE clips_environment_defmodule_find_instance(int argc, VALUE *argv, VALUE rbDefmodule) {
+	VALUE instanceName, search_imports, rbInstance, rbEnvironment;
+	Defmodule *defmodule;
+	Environment *env;
+	Instance *instance;
+	const char *cinstanceName;
+
+	TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, defmodule);
+
+	rbEnvironment = rb_iv_get(rbDefmodule, "@environment");
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, defmodule);
+
+	rb_scan_args(argc, argv, "11", &instanceName, &search_imports);
+
+	switch(TYPE(instanceName))
+	{
+		case T_SYMBOL:
+			cinstanceName = rb_id2name(SYM2ID(instanceName));
+			break;
+		case T_STRING:
+			cinstanceName = StringValueCStr(instanceName);
+			break;
+		default:
+			rb_warn("instance name must be a String or a Symbol");
+			return Qnil;
+	}
+
+	instance = FindInstance(
+		env,
+		defmodule,
+		cinstanceName,
+		RTEST(search_imports));
+
+	if (instance == NULL) {
+		return Qnil;
+	} else {
+		rbInstance =
+			TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, instance);
+
+		rb_iv_set(rbInstance, "@environment", rbEnvironment);
+
+		return rbInstance;
+	}
+}
+
+static VALUE clips_environment_defmodule_static_find_instance(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbDefmodule, rbEnvironment, instanceName, search_imports, rbInstance;
+	Defmodule *defmodule;
+	Environment *env;
+	Instance *instance;
+	const char *cinstanceName;
+
+	rb_scan_args(argc, argv, "21", &rbDefmodule, &instanceName, &search_imports);
+
+	rbEnvironment = rb_iv_get(rbDefmodule, "@environment");
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, defmodule);
+
+	switch(TYPE(instanceName))
+	{
+		case T_SYMBOL:
+			cinstanceName = rb_id2name(SYM2ID(instanceName));
+			break;
+		case T_STRING:
+			cinstanceName = StringValueCStr(instanceName);
+			break;
+		default:
+			rb_warn("instance name must be a String or a Symbol");
+			return Qnil;
+	}
+
+	instance = FindInstance(
+		env,
+		defmodule,
+		cinstanceName,
+		RTEST(search_imports));
+
+	if (instance == NULL) {
+		return Qnil;
+	} else {
+		rbInstance =
+			TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, instance);
+
+		rb_iv_set(rbInstance, "@environment", rbEnvironment);
+
+		return rbInstance;
+	}
+}
+
+
 static VALUE clips_environment_find_deftemplate(VALUE self, VALUE deftemplate_name)
 {
 	Environment *env;
@@ -2157,6 +2470,186 @@ static VALUE clips_environment_static_get_fact_list(int argc, VALUE *argv, VALUE
 	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
 
 	return out;
+}
+
+static VALUE clips_environment_get_instance_list(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE rbDefclass_or_defclass_name, rbDefclass, include_subclasses, rbInstance, returnArray;
+	Environment *env;
+	Defclass *defclass;
+	UDFValue iterator;
+	Instance *theInstance;
+
+	returnArray = rb_ary_new2(0);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "02", &rbDefclass_or_defclass_name, &include_subclasses);
+	// defclass is undefined, ignore include_subclasses
+	if (rbDefclass_or_defclass_name == Qnil) {
+		for (
+			theInstance = GetNextInstance(env,NULL);
+			theInstance != NULL;
+			theInstance = GetNextInstance(env,theInstance)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	} else if (include_subclasses != Qtrue) {
+		switch (TYPE(rbDefclass_or_defclass_name)) {
+			case T_STRING:
+			case T_SYMBOL:
+				if (Qnil == (rbDefclass = clips_environment_find_defclass(rbEnvironment, rbDefclass_or_defclass_name))) {
+					rb_warn("could not find defclass");
+					return Qnil;
+				}
+				TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
+				break;
+			case T_DATA:
+				TypedData_Get_Struct(rbDefclass_or_defclass_name, Defclass, &Defclass_type, defclass);
+				break;
+			default:
+				rb_warn("defclass name must be a symbol or string");
+				return Qnil;
+		}
+		for (
+			theInstance = GetNextInstanceInClass(defclass,NULL);
+			theInstance != NULL;
+			theInstance = GetNextInstanceInClass(defclass,theInstance)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	} else if (include_subclasses == Qtrue) {
+		switch (TYPE(rbDefclass_or_defclass_name)) {
+			case T_STRING:
+			case T_SYMBOL:
+				if (Qnil == (rbDefclass = clips_environment_find_defclass(rbEnvironment, rbDefclass_or_defclass_name))) {
+					rb_warn("could not find defclass");
+					return Qnil;
+				}
+				TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
+				break;
+			case T_DATA:
+				TypedData_Get_Struct(rbDefclass_or_defclass_name, Defclass, &Defclass_type, defclass);
+				break;
+			default:
+				rb_warn("defclass name must be a symbol or string");
+				return Qnil;
+		}
+		for (
+			theInstance = GetNextInstanceInClassAndSubclasses(&defclass,NULL,&iterator);
+			theInstance != NULL;
+			theInstance = GetNextInstanceInClassAndSubclasses(&defclass,theInstance,&iterator)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	// unexpected input of some kind...
+	} else {
+		rb_warn("unexpected arguments sent to get_instance_list!");
+		return Qnil;
+	}
+
+	return returnArray;
+}
+
+static VALUE clips_environment_static_get_instance_list(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, rbDefclass_or_defclass_name, rbDefclass, include_subclasses, rbInstance, returnArray;
+	Environment *env;
+	Defclass *defclass;
+	UDFValue iterator;
+	Instance *theInstance;
+
+	returnArray = rb_ary_new2(0);
+
+	rb_scan_args(argc, argv, "12", &rbEnvironment, &rbDefclass_or_defclass_name, &include_subclasses);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	// defclass is undefined, ignore include_subclasses
+	if (rbDefclass_or_defclass_name == Qnil) {
+		for (
+			theInstance = GetNextInstance(env,NULL);
+			theInstance != NULL;
+			theInstance = GetNextInstance(env,theInstance)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	} else if (include_subclasses != Qtrue) {
+		switch (TYPE(rbDefclass_or_defclass_name)) {
+			case T_STRING:
+			case T_SYMBOL:
+				if (Qnil == (rbDefclass = clips_environment_find_defclass(rbEnvironment, rbDefclass_or_defclass_name))) {
+					rb_warn("could not find defclass");
+					return Qnil;
+				}
+				TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
+				break;
+			case T_DATA:
+				TypedData_Get_Struct(rbDefclass_or_defclass_name, Defclass, &Defclass_type, defclass);
+				break;
+			default:
+				rb_warn("defclass name must be a symbol or string");
+				return Qnil;
+		}
+		for (
+			theInstance = GetNextInstanceInClass(defclass,NULL);
+			theInstance != NULL;
+			theInstance = GetNextInstanceInClass(defclass,theInstance)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	} else if (include_subclasses == Qtrue) {
+		switch (TYPE(rbDefclass_or_defclass_name)) {
+			case T_STRING:
+			case T_SYMBOL:
+				if (Qnil == (rbDefclass = clips_environment_find_defclass(rbEnvironment, rbDefclass_or_defclass_name))) {
+					rb_warn("could not find defclass");
+					return Qnil;
+				}
+				TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
+				break;
+			case T_DATA:
+				TypedData_Get_Struct(rbDefclass_or_defclass_name, Defclass, &Defclass_type, defclass);
+				break;
+			default:
+				rb_warn("defclass name must be a symbol or string");
+				return Qnil;
+		}
+		for (
+			theInstance = GetNextInstanceInClassAndSubclasses(&defclass,NULL,&iterator);
+			theInstance != NULL;
+			theInstance = GetNextInstanceInClassAndSubclasses(&defclass,theInstance,&iterator)
+		) {
+			rbInstance =
+				TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, theInstance);
+
+			rb_iv_set(rbInstance, "@environment", rbEnvironment);
+			rb_ary_push(returnArray, rbInstance);
+		}
+	// unexpected input of some kind...
+	} else {
+		rb_warn("unexpected arguments sent to get_instance_list!");
+		return Qnil;
+	}
+
+	return returnArray;
 }
 
 static VALUE clips_environment_get_deftemplate_list(int argc, VALUE *argv, VALUE rbEnvironment) {
@@ -3506,12 +3999,16 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "find_deftemplate", clips_environment_find_deftemplate, 1);
 	rb_define_singleton_method(rbEnvironment, "find_defclass", clips_environment_static_find_defclass, 2);
 	rb_define_method(rbEnvironment, "find_defclass", clips_environment_find_defclass, 1);
+	rb_define_singleton_method(rbEnvironment, "find_instance", clips_environment_static_find_instance, -1);
+	rb_define_method(rbEnvironment, "find_instance", clips_environment_find_instance, -1);
 	rb_define_singleton_method(rbEnvironment, "get_current_module", clips_environment_static_get_current_module, 1);
 	rb_define_method(rbEnvironment, "get_current_module", clips_environment_get_current_module, 0);
 	rb_define_singleton_method(rbEnvironment, "set_current_module", clips_environment_static_set_current_module, 2);
 	rb_define_method(rbEnvironment, "set_current_module", clips_environment_set_current_module, 1);
 	rb_define_singleton_method(rbEnvironment, "get_fact_list", clips_environment_static_get_fact_list, -1);
 	rb_define_method(rbEnvironment, "get_fact_list", clips_environment_get_fact_list, -1);
+	rb_define_singleton_method(rbEnvironment, "get_instance_list", clips_environment_static_get_instance_list, -1);
+	rb_define_method(rbEnvironment, "get_instance_list", clips_environment_get_instance_list, -1);
 	rb_define_singleton_method(rbEnvironment, "get_deftemplate_list", clips_environment_static_get_deftemplate_list, -1);
 	rb_define_method(rbEnvironment, "get_deftemplate_list", clips_environment_get_deftemplate_list, -1);
 	rb_define_singleton_method(rbEnvironment, "get_defclass_list", clips_environment_static_get_defclass_list, -1);
@@ -3649,6 +4146,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefmodule, "get_deftemplate_list", clips_environment_defmodule_get_deftemplate_list, 0);
 	rb_define_singleton_method(rbDefmodule, "get_defrule_list", clips_environment_defmodule_static_get_defrule_list, 1);
 	rb_define_method(rbDefmodule, "get_defrule_list", clips_environment_defmodule_get_defrule_list, 0);
+	rb_define_singleton_method(rbDefmodule, "find_instance", clips_environment_defmodule_static_find_instance, -1);
+	rb_define_method(rbDefmodule, "find_instance", clips_environment_defmodule_find_instance, -1);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_alloc_func(rbFact, fact_alloc);
@@ -3700,6 +4199,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefclass, "defmodule_name", clips_environment_defclass_defmodule_name, 0);
 	rb_define_singleton_method(rbDefclass, "pp_form", clips_environment_defclass_static_pp_form, 1);
 	rb_define_method(rbDefclass, "pp_form", clips_environment_defclass_pp_form, 0);
+	rb_define_singleton_method(rbDefclass, "get_instance_list", clips_environment_defclass_static_get_instance_list, -1);
+	rb_define_method(rbDefclass, "get_instance_list", clips_environment_defclass_get_instance_list, -1);
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 	rb_define_alloc_func(rbInstance, instance_alloc);

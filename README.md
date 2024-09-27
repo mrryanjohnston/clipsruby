@@ -494,6 +494,20 @@ CLIPS::Environment::Defclass.defmodule_name(defclass)
 defclass.defmodule_name
 ```
 
+### `CLIPS::Environment::Defclass.get_instance_list`
+### `CLIPS::Environment::Defclass#get_instance_list`
+
+Return an array of Instances of the Defclass.
+Pass `true` as and argument to include instances of subclasses
+of this Defclass.
+
+```ruby
+CLIPS::Environment::Defclass.get_instance_list(defclass)
+CLIPS::Environment::Defclass.get_instance_list(defclass, true)
+defclass.get_instance_list
+defclass.get_instance_list(true)
+```
+
 ### `CLIPS::Environment.find_defrule`
 ### `CLIPS::Environment#find_defrule`
 
@@ -502,6 +516,24 @@ Finds a defrule by name and returns a CLIPS::Environment::Defrule object
 ```ruby
 CLIPS::Environment.find_defrule(:a)
 env.find_defrule("foo")
+```
+
+### `CLIPS::Environment.find_instance`
+### `CLIPS::Environment#find_instance`
+
+Finds an instance by name and returns a CLIPS::Environment::Instance object.
+Can take an optional second and third argument for Defmodule or Demodule name
+and a boolean that represents whether or not the instance should be searched for
+in imported modules.
+If the second argument is `nil`, `find_instance` will search the current module only.
+
+```ruby
+CLIPS::Environment.find_definstance(:a)
+env.find_definstance("foo")
+CLIPS::Environment.find_definstance(:a, :my_module)
+env.find_definstance("foo", "my_module")
+CLIPS::Environment.find_definstance(:a, :my_module, true)
+env.find_definstance("foo", nil, true)
 ```
 
 ### `CLIPS::Environment::Defrule.name`
@@ -634,6 +666,21 @@ CLIPS::Environment::Defmodule.get_fact_list(defmodule)
 defmodule.get_fact_list
 ```
 
+### `CLIPS::Environment::Defmodule.find_instance`
+### `CLIPS::Environment::Defmodule#find_instance`
+
+Finds an instance by name and returns a CLIPS::Environment::Instance object.
+Can take an optional second argument
+of a boolean that represents whether or not the instance should be searched for
+in imported modules.
+
+```ruby
+CLIPS::Environment::Defmodule.find_instance(:a)
+defmodule.find_instance("foo")
+CLIPS::Environment::Defmodule.find_instance(:a, true)
+defmodule.find_instance("foo", true)
+```
+
 ### `CLIPS::Environment.get_defclass_list`
 ### `CLIPS::Environment#get_defclass_list`
 
@@ -648,6 +695,26 @@ CLIPS::Environment.get_defclass_list(env, :MAIN)
 env.get_defclass_list(:MAIN)
 CLIPS::Environment.get_defclass_list(env, defmodule)
 env.get_defclass_list(defmodule)
+```
+
+### `CLIPS::Environment.get_instance_list`
+### `CLIPS::Environment#get_instance_list`
+
+Return an array of Instances in the environment. Pass an argument of a
+symbol, string, or Defclass object in order to only get Instances
+in that Defclass. If you do not, it will return all Instances of all Defclasses.
+If you do, you may also pass `true` as the second argument
+to include instances of subclasses of this Defclass.
+
+```ruby
+CLIPS::Environment.get_instance_list(env)
+env.get_instance_list
+CLIPS::Environment.get_instance_list(env, :foo_class)
+env.get_instance_list(:"my-class")
+CLIPS::Environment.get_instance_list(env, defclass)
+env.get_instance_list(defclass)
+CLIPS::Environment.get_instance_list(env, defclass, true)
+env.get_instance_list(defclass, true)
 ```
 
 ### `CLIPS::Environment.get_deftemplate_list`
