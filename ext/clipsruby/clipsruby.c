@@ -282,10 +282,16 @@ static VALUE clips_environment_defclass_static_defmodule_name(VALUE self, VALUE 
 static VALUE clips_environment_defclass_pp_form(VALUE self)
 {
 	Defclass *defclass;
+	const char *pp_form;
 
 	TypedData_Get_Struct(self, Defclass, &Defclass_type, defclass);
 
-	return rb_str_new2(DefclassPPForm(defclass));
+	pp_form = DefclassPPForm(defclass);
+	if (pp_form == NULL) {
+		return Qnil;
+	} else {
+		return rb_str_new2(pp_form);
+	}
 }
 
 static VALUE clips_environment_defclass_static_pp_form(VALUE self, VALUE rbDefclass)
