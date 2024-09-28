@@ -454,14 +454,14 @@ CLIPS::Environment::Instance.pp_form(instance)
 instance.pp_form
 ```
 
-### `CLIPS::Environment::Instance._class`
-### `CLIPS::Environment::Instance#_class`
+### `CLIPS::Environment::Instance.defclass`
+### `CLIPS::Environment::Instance#defclass`
 
 Returns the Defclass of an Instance
 
 ```ruby
-CLIPS::Environment::Instance._class(instance)
-instance._class
+CLIPS::Environment::Instance.defclass(instance)
+instance.defclass
 ```
 
 ### `CLIPS::Environment::Defclass.name`
@@ -498,7 +498,7 @@ defclass.defmodule_name
 ### `CLIPS::Environment::Defclass#get_instance_list`
 
 Return an array of Instances of the Defclass.
-Pass `true` as and argument to include instances of subclasses
+Pass `true` as an argument to include instances of subclasses
 of this Defclass.
 
 ```ruby
@@ -506,6 +506,32 @@ CLIPS::Environment::Defclass.get_instance_list(defclass)
 CLIPS::Environment::Defclass.get_instance_list(defclass, true)
 defclass.get_instance_list
 defclass.get_instance_list(true)
+```
+
+### `CLIPS::Environment::Defclass.superclasses`
+### `CLIPS::Environment::Defclass#superclasses`
+
+Return an array of superclasses of the Defclass.
+Pass `true` as an argument to include inherited superclasses.
+
+```ruby
+CLIPS::Environment::Defclass.superclasses(defclass)
+CLIPS::Environment::Defclass.superclasses(defclass, true)
+defclass.superclasses
+defclass.superclasses(true)
+```
+
+### `CLIPS::Environment::Defclass.subclasses`
+### `CLIPS::Environment::Defclass#subclasses`
+
+Return an array of subclasses of the Defclass.
+Pass `true` as an argument to include inherited subclasses.
+
+```ruby
+CLIPS::Environment::Defclass.subclasses(defclass)
+CLIPS::Environment::Defclass.subclasses(defclass, true)
+defclass.subclasses
+defclass.subclasses(true)
 ```
 
 ### `CLIPS::Environment.find_defrule`

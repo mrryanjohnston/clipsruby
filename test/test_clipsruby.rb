@@ -933,13 +933,13 @@ class ClipsrubyTest < Minitest::Test
     assert 1,
       env._eval("(find-all-instances ((?i my-class)) TRUE)").length
     refute env.make_instance("(of non-existant)")
-    assert instance._class
+    assert instance.defclass
     assert_equal :"my-class",
-      instance._class.name
+      instance.defclass.name
     assert_equal :MAIN,
-      instance._class.defmodule_name
+      instance.defclass.defmodule_name
     assert_equal "(defclass MAIN::my-class\n   (is-a USER))\n",
-      instance._class.pp_form
+      instance.defclass.pp_form
     assert_equal :foo,
       instance.name
     assert_equal "[foo] of my-class",
@@ -948,5 +948,42 @@ class ClipsrubyTest < Minitest::Test
     assert 0,
       env._eval("(find-all-instances ((?i my-class)) TRUE)").length
     refute instance.unmake
+  end
+
+  def test_superclasses_subclasses
+    env = CLIPS.create_environment
+    env.build("(defclass my-class (is-a USER))")
+    env.build("(defclass other-class (is-a USER))")
+    env.build("(defclass sub-class (is-a my-class))")
+    env.build("(defclass sub-sub-class (is-a sub-class))")
+    assert_equal [:"my-class"],
+      env.find_defclass('sub-class').superclasses
+    assert_equal [:"my-class", :USER, :OBJECT],
+      env.find_defclass('sub-class').superclasses(true)
+    assert_equal [:"sub-sub-class"],
+      env.find_defclass('sub-class').subclasses
+    assert_equal [:USER],
+      env.find_defclass('my-class').superclasses
+    assert_equal [:USER, :OBJECT],
+      env.find_defclass('my-class').superclasses(true)
+    assert_equal [:"sub-class"],
+      env.find_defclass('my-class').subclasses
+    assert_equal [:"sub-class", :"sub-sub-class"],
+      env.find_defclass('my-class').subclasses(true)
+
+    assert_equal [:"my-class"],
+      CLIPS::Environment::Defclass.superclasses(env.find_defclass('sub-class'))
+    assert_equal [:"my-class", :USER, :OBJECT],
+      CLIPS::Environment::Defclass.superclasses(env.find_defclass('sub-class'), true)
+    assert_equal [:"sub-sub-class"],
+      CLIPS::Environment::Defclass.subclasses(env.find_defclass('sub-class'))
+    assert_equal [:USER],
+      CLIPS::Environment::Defclass.superclasses(env.find_defclass('my-class'))
+    assert_equal [:USER, :OBJECT],
+      CLIPS::Environment::Defclass.superclasses(env.find_defclass('my-class'), true)
+    assert_equal [:"sub-class"],
+      CLIPS::Environment::Defclass.subclasses(env.find_defclass('my-class'))
+    assert_equal [:"sub-class", :"sub-sub-class"],
+      CLIPS::Environment::Defclass.subclasses(env.find_defclass('my-class'), true)
   end
 end
