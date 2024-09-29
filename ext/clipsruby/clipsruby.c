@@ -1,6 +1,24 @@
 #include "clips.h"
 #include "ruby.h"
 
+void environment_free(void *data)
+{
+	DestroyEnvironment((Environment*) data);
+}
+
+size_t environment_size(const void *data)
+{
+	return MemUsed((Environment*) data);
+}
+
+static const rb_data_type_t Environment_type = {
+	.function = {
+		.dfree = environment_free,
+		.dsize = environment_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 size_t deffacts_size(const void *data)
 {
 	return sizeof(Deffacts);
@@ -133,6 +151,36 @@ static VALUE clips_environment_deftemplate_static_defmodule_name(VALUE self, VAL
 	return clips_environment_deftemplate_defmodule_name(rbDeftemplate);
 }
 
+static VALUE clips_environment_deftemplate_defmodule(VALUE self)
+{
+	Deftemplate *template;
+	const char *defmoduleName;
+	Defmodule *defmodule = NULL;
+	Environment *env;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, template);
+	
+	defmoduleName = DeftemplateModule(template);
+
+	if (defmoduleName != NULL) {
+		defmodule = FindDefmodule(env, defmoduleName);
+	}
+
+	if (defmodule != NULL) {
+		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Defmodule")), &Defmodule_type, defmodule);
+	} else {
+		return Qnil;
+	}
+}
+
+static VALUE clips_environment_deftemplate_static_defmodule(VALUE self, VALUE rbDeftemplate)
+{
+	return clips_environment_deftemplate_defmodule(rbDeftemplate);
+}
+
 static VALUE clips_environment_defrule_defmodule_name(VALUE self)
 {
 	Defrule *rule;
@@ -147,23 +195,35 @@ static VALUE clips_environment_defrule_static_defmodule_name(VALUE self, VALUE r
 	return clips_environment_defrule_defmodule_name(rbDefrule);
 }
 
-void environment_free(void *data)
+static VALUE clips_environment_defrule_defmodule(VALUE self)
 {
-	DestroyEnvironment((Environment*) data);
+	Defrule *rule;
+	const char *defmoduleName;
+	Defmodule *defmodule = NULL;
+	Environment *env;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	TypedData_Get_Struct(self, Defrule, &Defrule_type, rule);
+	
+	defmoduleName = DefruleModule(rule);
+
+	if (defmoduleName != NULL) {
+		defmodule = FindDefmodule(env, defmoduleName);
+	}
+
+	if (defmodule != NULL) {
+		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Defmodule")), &Defmodule_type, defmodule);
+	} else {
+		return Qnil;
+	}
 }
 
-size_t environment_size(const void *data)
+static VALUE clips_environment_defrule_static_defmodule(VALUE self, VALUE rbDefrule)
 {
-	return MemUsed((Environment*) data);
+	return clips_environment_defrule_defmodule(rbDefrule);
 }
-
-static const rb_data_type_t Environment_type = {
-	.function = {
-		.dfree = environment_free,
-		.dsize = environment_size
-	},
-	.flags = RUBY_TYPED_FREE_IMMEDIATELY
-};
 
 static VALUE clips_environment_facts(VALUE self)
 {
@@ -277,6 +337,36 @@ static VALUE clips_environment_defclass_defmodule_name(VALUE self)
 static VALUE clips_environment_defclass_static_defmodule_name(VALUE self, VALUE rbDefclass)
 {
 	return clips_environment_defclass_defmodule_name(rbDefclass);
+}
+
+static VALUE clips_environment_defclass_defmodule(VALUE self)
+{
+	Defclass *class;
+	const char *defmoduleName;
+	Defmodule *defmodule = NULL;
+	Environment *env;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	TypedData_Get_Struct(self, Defclass, &Defclass_type, class);
+	
+	defmoduleName = DefclassModule(class);
+
+	if (defmoduleName != NULL) {
+		defmodule = FindDefmodule(env, defmoduleName);
+	}
+
+	if (defmodule != NULL) {
+		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Defmodule")), &Defmodule_type, defmodule);
+	} else {
+		return Qnil;
+	}
+}
+
+static VALUE clips_environment_defclass_static_defmodule(VALUE self, VALUE rbDefclass)
+{
+	return clips_environment_defclass_defmodule(rbDefclass);
 }
 
 static VALUE clips_environment_defclass_pp_form(VALUE self)
@@ -1952,6 +2042,7 @@ static VALUE clips_environment_fact_static_index(VALUE self, VALUE rbFact)
 
 static VALUE clips_environment_find_defrule(VALUE self, VALUE defrule_name)
 {
+	VALUE rbDefrule;
 	Environment *env;
 	Defrule *rule;
 
@@ -1972,7 +2063,9 @@ static VALUE clips_environment_find_defrule(VALUE self, VALUE defrule_name)
 	if (rule == NULL) {
 		return Qnil;
 	} else {
-		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Defrule")), &Defrule_type, rule);
+		rbDefrule = TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Defrule")), &Defrule_type, rule); 
+		rb_iv_set(rbDefrule, "@environment", self);
+		return rbDefrule;
 	}
 }
 
@@ -4197,6 +4290,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDeftemplate, "pp_form", clips_environment_deftemplate_pp_form, 0);
 	rb_define_singleton_method(rbDeftemplate, "assert_hash", clips_environment_deftemplate_static_assert_hash, 2);
 	rb_define_method(rbDeftemplate, "assert_hash", clips_environment_deftemplate_assert_hash, 1);
+	rb_define_singleton_method(rbDeftemplate, "defmodule", clips_environment_deftemplate_static_defmodule, 1);
+	rb_define_method(rbDeftemplate, "defmodule", clips_environment_deftemplate_defmodule, 0);
 	rb_define_singleton_method(rbDeftemplate, "defmodule_name", clips_environment_deftemplate_static_defmodule_name, 1);
 	rb_define_method(rbDeftemplate, "defmodule_name", clips_environment_deftemplate_defmodule_name, 0);
 	rb_define_singleton_method(rbDeftemplate, "slot_names", clips_environment_deftemplate_static_slot_names, 1);
@@ -4284,6 +4379,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefrule, "salience", clips_environment_defrule_salience, 0);
 	rb_define_singleton_method(rbDefrule, "defmodule_name", clips_environment_defrule_static_defmodule_name, 1);
 	rb_define_method(rbDefrule, "defmodule_name", clips_environment_defrule_defmodule_name, 0);
+	rb_define_singleton_method(rbDefrule, "defmodule", clips_environment_defrule_static_defmodule, 1);
+	rb_define_method(rbDefrule, "defmodule", clips_environment_defrule_defmodule, 0);
 
 	VALUE rbDefclass = rb_define_class_under(rbEnvironment, "Defclass", rb_cObject);
 	rb_define_alloc_func(rbDefclass, defclass_alloc);
@@ -4291,6 +4388,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefclass, "name", clips_environment_defclass_name, 0);
 	rb_define_singleton_method(rbDefclass, "defmodule_name", clips_environment_defclass_static_defmodule_name, 1);
 	rb_define_method(rbDefclass, "defmodule_name", clips_environment_defclass_defmodule_name, 0);
+	rb_define_singleton_method(rbDefclass, "defmodule", clips_environment_defclass_static_defmodule, 1);
+	rb_define_method(rbDefclass, "defmodule", clips_environment_defclass_defmodule, 0);
 	rb_define_singleton_method(rbDefclass, "pp_form", clips_environment_defclass_static_pp_form, 1);
 	rb_define_method(rbDefclass, "pp_form", clips_environment_defclass_pp_form, 0);
 	rb_define_singleton_method(rbDefclass, "get_instance_list", clips_environment_defclass_static_get_instance_list, -1);

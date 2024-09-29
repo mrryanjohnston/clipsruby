@@ -285,15 +285,20 @@ class ClipsrubyTest < Minitest::Test
       env.find_defrule(:"runs-once-also").name
   end
 
-  def test_defrule_defmodule_name
+  def test_defrule_defmodule_name_defmodule
     env = CLIPS.create_environment
     env.build("(defrule a =>)")
     assert_equal :MAIN,
       env.find_defrule(:a).defmodule_name
+    assert env.find_defrule(:a).defmodule
+    assert_equal :MAIN,
+      env.find_defrule(:a).defmodule.name
     env.build("(defmodule my_module (export ?ALL))")
     env.build("(defrule b =>)")
     assert_equal :my_module,
       env.find_defrule(:b).defmodule_name
+    assert_equal :my_module,
+      env.find_defrule(:b).defmodule.name
   end
 
   def test_defrule_pp_form
@@ -654,7 +659,7 @@ class ClipsrubyTest < Minitest::Test
       env.get_defrule_list(:my_module)
   end
 
-  def test_deftemplate_defmodule_name
+  def test_deftemplate_defmodule_name_defmodule
     env = CLIPS.create_environment
     env.build("(deftemplate my-template (slot foo) (multislot bar))")
     assert_equal :MAIN,
@@ -663,6 +668,8 @@ class ClipsrubyTest < Minitest::Test
     env.build("(deftemplate another_template (slot baz) (multislot bat))")
     assert_equal :my_module,
       env.find_deftemplate(:another_template).defmodule_name
+    assert_equal :my_module,
+      env.find_deftemplate(:another_template).defmodule.name
   end
 
   def test_deftemplate_slot_names
@@ -925,7 +932,7 @@ class ClipsrubyTest < Minitest::Test
     refute env.get_watch_state(:focus)
   end
 
-  def test_defclass_name_defmodule_pp_form_make_instance_unmake_class_name_pp_form
+  def test_defclass_name_defmodule_defmodule_pp_form_make_instance_unmake_class_name_pp_form
     env = CLIPS.create_environment
     env.build("(defclass my-class (is-a USER))")
     instance = env.make_instance("([foo] of my-class)")
@@ -938,6 +945,8 @@ class ClipsrubyTest < Minitest::Test
       instance.defclass.name
     assert_equal :MAIN,
       instance.defclass.defmodule_name
+    assert_equal :MAIN,
+      instance.defclass.defmodule.name
     assert_equal "(defclass MAIN::my-class\n   (is-a USER))\n",
       instance.defclass.pp_form
     assert_equal :foo,

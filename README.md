@@ -494,6 +494,16 @@ CLIPS::Environment::Defclass.defmodule_name(defclass)
 defclass.defmodule_name
 ```
 
+### `CLIPS::Environment::Defclass.defmodule`
+### `CLIPS::Environment::Defclass#defmodule`
+
+Returns the defmodule in which the defclass is defined
+
+```ruby
+CLIPS::Environment::Defclass.defmodule(defclass)
+defclass.defmodule
+```
+
 ### `CLIPS::Environment::Defclass.get_instance_list`
 ### `CLIPS::Environment::Defclass#get_instance_list`
 
@@ -580,6 +590,16 @@ Returns the name of the defmodule in which the defrule is defined
 ```ruby
 CLIPS::Environment::Defrule.defmodule_name(defrule)
 defrule.defmodule_name
+```
+
+### `CLIPS::Environment::Defrule.defmodule`
+### `CLIPS::Environment::Defrule#defmodule`
+
+Returns the defmodule in which the defrule is defined
+
+```ruby
+CLIPS::Environment::Defrule.defmodule(defrule)
+defrule.defmodule
 ```
 
 ### `CLIPS::Environment::Defrule.is_deletable`
@@ -844,6 +864,16 @@ Returns the name of the defmodule in which the deftemplate is defined
 ```ruby
 CLIPS::Environment::Deftemplate.defmodule_name(deftemplate)
 deftemplate.defmodule_name
+```
+
+### `CLIPS::Environment::Deftemplate.defmodule`
+### `CLIPS::Environment::Deftemplate#defmodule`
+
+Returns the defmodule in which the deftemplate is defined
+
+```ruby
+CLIPS::Environment::Deftemplate.defmodule(deftemplate)
+deftemplate.defmodule
 ```
 
 ### `CLIPS::Environment::Deftemplate.slot_names`
