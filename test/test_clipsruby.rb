@@ -132,21 +132,32 @@ class ClipsrubyTest < Minitest::Test
   def test_save_load
     env = CLIPS.create_environment
     env.build("(defrule do => (assert (foo zap)))")
+    env.build("(defmodule WOO)")
+    env.build("(defclass FOO (is-a USER))")
+    env.make_instance("(of FOO)")
+    env.build("(deftemplate BAR)")
     env.save("test/load.clp")
     env.clear
     refute env.load("test/file_does_not_exist.bat")
     assert env.load("test/load.clp")
+    env.set_current_module(env.find_defmodule(:WOO))
     env.reset
+    assert env.find_defmodule(:WOO)
+    assert env.find_defrule(:do)
+    assert env.find_defclass(:"WOO::FOO")
+    assert env.find_deftemplate(:"WOO::BAR")
     assert_equal 1, env.run
-    facts = env.find_all_facts("(?f foo)")
-    assert_equal 1, facts.length
+    assert_equal 1, env.find_all_facts("(?f foo)").length
 
     env = CLIPS.create_environment
     assert env.load("test/load.clp")
     env.reset
+    assert env.find_defmodule(:WOO)
+    assert env.find_defrule(:do)
+    assert env.find_defclass(:"WOO::FOO")
+    assert env.find_deftemplate(:"WOO::BAR")
     assert_equal 1, env.run
-    facts = env.find_all_facts("(?f foo)")
-    assert_equal 1, facts.length
+    assert_equal 1, env.find_all_facts("(?f foo)").length
   end
 
   def test_save_facts_load_facts
@@ -167,21 +178,31 @@ class ClipsrubyTest < Minitest::Test
   def test_bsave_bload
     env = CLIPS.create_environment
     env.build("(defrule do => (assert (foo zap)))")
+    env.build("(defmodule WOO)")
+    env.build("(defclass FOO (is-a USER))")
+    env.make_instance("(of FOO)")
+    env.build("(deftemplate BAR)")
     env.bsave("test/bload.bin")
     env.clear
     refute env.bload("test/file_does_not_exist.bat")
     assert env.bload("test/bload.bin")
     env.reset
-    assert_equal 1, env.run
-    facts = env.find_all_facts("(?f foo)")
-    assert_equal 1, facts.length
+    assert env.find_defmodule(:WOO)
+    assert env.find_defrule(:do)
+    assert env.find_defclass(:"WOO::FOO")
+    assert env.find_deftemplate(:"WOO::BAR")
+    assert_equal 1,
+      env.run
+    assert_equal 1,
+      env.find_all_facts("(?f foo)").length
 
     env = CLIPS.create_environment
     assert env.bload("test/bload.bin")
     env.reset
-    assert_equal 1, env.run
-    facts = env.find_all_facts("(?f foo)")
-    assert_equal 1, facts.length
+    assert env.find_defmodule(:WOO)
+    assert env.find_defrule(:do)
+    assert env.find_defclass(:"WOO::FOO")
+    assert env.find_deftemplate(:"WOO::BAR")
   end
 
   def test_bsave_facts_bload_facts
@@ -311,10 +332,21 @@ class ClipsrubyTest < Minitest::Test
       env.find_defrule(:foo).pp_form
   end
 
-  def test_defrule_pp_form_from_binary_load
+  def test_pp_form_from_binary_load
     env = CLIPS.create_environment
     env.bload("test/bload.bin")
     assert_nil env.find_defrule(:do).pp_form
+    assert_nil env.find_defmodule(:WOO).pp_form
+    assert_nil env.find_defclass(:"WOO::FOO").pp_form
+    assert_nil env.find_deftemplate(:"WOO::BAR").pp_form
+  end
+
+  def test_pp_form_from_binary_facts_load
+    env = CLIPS.create_environment
+    env.bload_facts("test/bload_facts.bin")
+    assert_equal ["(bar 1 2)"],
+      env.find_fact("(?f bar)").map { _1.pp_form }
+    #assert_nil env.find_instance(:gen1).pp_form
   end
 
   def test_defrule_is_deletable

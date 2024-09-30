@@ -2122,10 +2122,16 @@ static VALUE clips_environment_deffacts_static_name(VALUE self, VALUE rbDeffacts
 static VALUE clips_environment_deffacts_pp_form(VALUE self)
 {
 	Deffacts *deffacts;
+	const char *pp_form;
 
 	TypedData_Get_Struct(self, Deffacts, &Deffacts_type, deffacts);
 
-	return rb_str_new2(DeffactsPPForm(deffacts));
+	pp_form = DeffactsPPForm(deffacts);
+	if (pp_form == NULL) {
+		return Qnil;
+	} else {
+		return rb_str_new2(pp_form);
+	}
 }
 
 static VALUE clips_environment_deffacts_static_pp_form(VALUE self, VALUE rbDeffacts)
@@ -2510,10 +2516,16 @@ static VALUE clips_environment_deftemplate_static_name(VALUE self, VALUE rbDefte
 static VALUE clips_environment_deftemplate_pp_form(VALUE self)
 {
 	Deftemplate *deftemplate;
+	const char *pp_form;
 
 	TypedData_Get_Struct(self, Deftemplate, &Deftemplate_type, deftemplate);
 
-	return rb_str_new2(DeftemplatePPForm(deftemplate));
+	pp_form = DeftemplatePPForm(deftemplate);
+	if (pp_form == NULL) {
+		return Qnil;
+	} else {
+		return rb_str_new2(pp_form);
+	}
 }
 
 static VALUE clips_environment_deftemplate_static_pp_form(VALUE self, VALUE rbDeftemplate)
@@ -3060,10 +3072,16 @@ static VALUE clips_environment_defmodule_static_name(VALUE self, VALUE rbDefmodu
 static VALUE clips_environment_defmodule_pp_form(VALUE self)
 {
 	Defmodule *defmodule;
+	const char *pp_form;
 
 	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, defmodule);
 
-	return rb_str_new2(DefmodulePPForm(defmodule));
+	pp_form = DefmodulePPForm(defmodule);
+	if (pp_form == NULL) {
+		return Qnil;
+	} else {
+		return rb_str_new2(pp_form);
+	}
 }
 
 static VALUE clips_environment_defmodule_static_pp_form(VALUE self, VALUE rbDefmodule)
