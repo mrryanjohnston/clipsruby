@@ -464,6 +464,19 @@ CLIPS::Environment::Instance.defclass(instance)
 instance.defclass
 ```
 
+### `CLIPS::Environment::Instance.to_h`
+### `CLIPS::Environment::Instance#to_h`
+
+Returns a hash representing the instance slot names and their values.
+Pass a `true` as an argument to get inhereted slots as well.
+
+```ruby
+CLIPS::Environment::Instance.to_h(instance)
+instance.to_h
+CLIPS::Environment::Instance.to_h(instance, true)
+instance.to_h(true)
+```
+
 ### `CLIPS::Environment::Defclass.name`
 ### `CLIPS::Environment::Defclass#name`
 
@@ -482,6 +495,19 @@ Returns a pretty printed string representation of an Defclass
 ```ruby
 CLIPS::Environment::Defclass.pp_form(defclass)
 defclass.pp_form
+```
+
+### `CLIPS::Environment::Defclass.slots`
+### `CLIPS::Environment::Defclass#slots`
+
+Returns an array representing the slot names of a Defclass.
+Pass `true` as an argument to get inherited slots, as well.
+
+```ruby
+CLIPS::Environment::Defclass.slots(defclass)
+defclass.slots
+CLIPS::Environment::Defclass.slots(defclass, true)
+defclass.slots(true)
 ```
 
 ### `CLIPS::Environment::Defclass.defmodule_name`

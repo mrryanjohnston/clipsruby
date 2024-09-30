@@ -1027,4 +1027,37 @@ class ClipsrubyTest < Minitest::Test
     assert_equal [:"sub-class", :"sub-sub-class"],
       CLIPS::Environment::Defclass.subclasses(env.find_defclass('my-class'), true)
   end
+
+  def test_defclass_slots_to_h
+    env = CLIPS.create_environment
+    env.build("(defclass my-class (is-a USER) (slot foo) (slot bar) (slot baz) (slot bat))")
+    env.build("(defclass my-other-class (is-a my-class) (slot another-slot))")
+    assert_equal [:foo, :bar, :baz, :bat],
+      env.find_defclass("my-class").slots
+    assert_equal [:"another-slot"],
+      env.find_defclass("my-other-class").slots
+    assert_equal [:foo, :bar, :baz, :bat, :"another-slot"],
+      env.find_defclass("my-other-class").slots(true)
+
+    assert_equal({foo: 123, bar: :nil, baz: :nil, bat: :nil},
+      env.make_instance("(of my-class (foo 123))").to_h)
+    assert_equal({"another-slot": :nil},
+      env.make_instance("(of my-other-class (foo 123))").to_h)
+    assert_equal({foo: 123, bar: :nil, baz: :nil, bat: :nil, "another-slot": :nil},
+      env.make_instance("(of my-other-class (foo 123))").to_h(true))
+
+    assert_equal [:foo, :bar, :baz, :bat],
+      CLIPS::Environment::Defclass.slots(env.find_defclass("my-class"))
+    assert_equal [:"another-slot"],
+      CLIPS::Environment::Defclass.slots(env.find_defclass("my-other-class"))
+    assert_equal [:foo, :bar, :baz, :bat, :"another-slot"],
+      CLIPS::Environment::Defclass.slots(env.find_defclass("my-other-class"), true)
+
+    assert_equal({foo: 123, bar: :nil, baz: :nil, bat: :nil},
+     CLIPS::Environment::Instance.to_h(env.make_instance("(of my-class (foo 123))")))
+    assert_equal({"another-slot": :nil},
+     CLIPS::Environment::Instance.to_h(env.make_instance("(of my-other-class (foo 123))")))
+    assert_equal({foo: 123, bar: :nil, baz: :nil, bat: :nil, "another-slot": :nil},
+     CLIPS::Environment::Instance.to_h(env.make_instance("(of my-other-class (foo 123))"), true))
+  end
 end

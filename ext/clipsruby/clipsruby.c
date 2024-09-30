@@ -1266,10 +1266,6 @@ static VALUE clips_environment_defclass_subclasses(int argc, VALUE *argv, VALUE 
 
 	rb_scan_args(argc, argv, "01", &inherit);
 
-	if (NIL_P(inherit)) {
-		inherit = Qfalse;
-	}
-
 	TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
 
 	ClassSubclasses(defclass, &value, RTEST(inherit));
@@ -1293,6 +1289,46 @@ static VALUE clips_environment_defclass_static_subclasses(int argc, VALUE *argv,
 	rbEnvironment = rb_iv_get(rbDefclass, "@environment");
 
 	ClassSubclasses(defclass, &value, RTEST(inherit));
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_defclass_slots(int argc, VALUE *argv, VALUE rbDefclass)
+{
+	VALUE rbEnvironment, inherit;
+	Defclass *defclass;
+	CLIPSValue value;
+	VALUE out;
+
+	rbEnvironment = rb_iv_get(rbDefclass, "@environment");
+
+	rb_scan_args(argc, argv, "01", &inherit);
+
+	TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
+
+	ClassSlots(defclass, &value, RTEST(inherit));
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_defclass_static_slots(int argc, VALUE *argv, VALUE klass)
+{
+	VALUE rbEnvironment, inherit, rbDefclass;
+	Defclass *defclass;
+	CLIPSValue value;
+	VALUE out;
+
+	rb_scan_args(argc, argv, "11", &rbDefclass, &inherit);
+
+	TypedData_Get_Struct(rbDefclass, Defclass, &Defclass_type, defclass);
+
+	rbEnvironment = rb_iv_get(rbDefclass, "@environment");
+
+	ClassSlots(defclass, &value, RTEST(inherit));
 
 	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
 
@@ -1434,6 +1470,57 @@ static VALUE clips_environment_fact_to_h(VALUE self)
 static VALUE clips_environment_fact_static_to_h(VALUE self, VALUE rbFact)
 {
 	return clips_environment_fact_to_h(rbFact);
+}
+
+static VALUE clips_environment_instance_to_h(int argc, VALUE *argv, VALUE rbInstance)
+{
+	VALUE rbEnvironment, inherit;
+	Instance *instance;
+	CLIPSValue key, value;
+	rbEnvironment = rb_iv_get(rbInstance, "@environment");
+
+	TypedData_Get_Struct(rbInstance, Instance, &Instance_type, instance);
+
+	rb_scan_args(argc, argv, "01", &inherit);
+
+	ClassSlots(InstanceClass(instance), &key, RTEST(inherit));
+
+	VALUE hash = rb_hash_new();
+	for (size_t i = 0; i < key.multifieldValue->length; i++)
+	{
+		VALUE innerValue;
+		DirectGetSlot(instance, key.multifieldValue->contents[i].lexemeValue->contents, &value);
+		CLIPSValue_to_VALUE(&value, &innerValue, &rbEnvironment);
+		rb_hash_aset(hash, ID2SYM(rb_intern(key.multifieldValue->contents[i].lexemeValue->contents)), innerValue);
+	}
+
+	return hash;
+}
+
+static VALUE clips_environment_instance_static_to_h(int argc, VALUE *argv, VALUE klass)
+{
+	VALUE rbInstance, rbEnvironment, inherit;
+	Instance *instance;
+	CLIPSValue key, value;
+
+	rb_scan_args(argc, argv, "11", &rbInstance, &inherit);
+
+	rbEnvironment = rb_iv_get(rbInstance, "@environment");
+
+	TypedData_Get_Struct(rbInstance, Instance, &Instance_type, instance);
+
+	ClassSlots(InstanceClass(instance), &key, RTEST(inherit));
+
+	VALUE hash = rb_hash_new();
+	for (size_t i = 0; i < key.multifieldValue->length; i++)
+	{
+		VALUE innerValue;
+		DirectGetSlot(instance, key.multifieldValue->contents[i].lexemeValue->contents, &value);
+		CLIPSValue_to_VALUE(&value, &innerValue, &rbEnvironment);
+		rb_hash_aset(hash, ID2SYM(rb_intern(key.multifieldValue->contents[i].lexemeValue->contents)), innerValue);
+	}
+
+	return hash;
 }
 
 static VALUE clips_environment_batch_star(VALUE self, VALUE path)
@@ -4416,6 +4503,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefclass, "superclasses", clips_environment_defclass_superclasses, -1);
 	rb_define_singleton_method(rbDefclass, "subclasses", clips_environment_defclass_static_subclasses, -1);
 	rb_define_method(rbDefclass, "subclasses", clips_environment_defclass_subclasses, -1);
+	rb_define_singleton_method(rbDefclass, "slots", clips_environment_defclass_static_slots, -1);
+	rb_define_method(rbDefclass, "slots", clips_environment_defclass_slots, -1);
 
 	VALUE rbInstance = rb_define_class_under(rbEnvironment, "Instance", rb_cObject);
 	rb_define_alloc_func(rbInstance, instance_alloc);
@@ -4429,4 +4518,6 @@ void Init_clipsruby(void)
 	rb_define_method(rbInstance, "name", clips_environment_instance_name, 0);
 	rb_define_singleton_method(rbInstance, "pp_form", clips_environment_instance_static_pp_form, 1);
 	rb_define_method(rbInstance, "pp_form", clips_environment_instance_pp_form, 0);
+	rb_define_singleton_method(rbInstance, "to_h", clips_environment_instance_static_to_h, -1);
+	rb_define_method(rbInstance, "to_h", clips_environment_instance_to_h, -1);
 }
