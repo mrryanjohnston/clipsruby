@@ -216,11 +216,37 @@ fact2 = env.assert_hash(:my_deftemplate, d: 4.5, e: :asdf)
 
 #### `CLIPS::Environment.make_instance` / `CLIPS::Environment#make_instance`
 
-Make a string as an Instance in the CLIPS environment.
+Make an Instance in the CLIPS environment.
+
+The first argument can be:
+
+* a symbol/string representing a string you'd call `make-instance` with in CLIPS code
+* a symbol/string representing a Defclass in the environment
+* a `CLIPS::Environment::Defclass` object
+
+The second argument can be:
+
+* a symbol/string representing the name of the instance you'd like
+* a hash holding the key/value pairs for instance slot assignment
+* `nil`
+
+The third argument can be:
+
+* a hash holding the key/value pairs for instance slot assignment
 
 ```ruby
 instance = CLIPS::Environment.make_instance(env, "(of USER)")
 instance2 = env.make_instance("(of USER)")
+instance3 = CLIPS::Environment.make_instance(env, :USER)
+instance4 = env.make_instance(:USER)
+instance5 = CLIPS::Environment.make_instance(env, env.find_defclass(:USER))
+instance6 = env.make_instance(env.find_defclass(:USER))
+instance7 = CLIPS::Environment.make_instance(env, env.find_defclass(:my_class), foo: "Bar!")
+instance8 = env.make_instance(env.find_defclass(:my_class), foo: "Bar!")
+instance9 = CLIPS::Environment.make_instance(env, env.find_defclass(:my_class), :my_instance1, foo: "Bar!")
+instance10 = env.make_instance(env.find_defclass(:my_class), :my_instance2, foo: "Bar.")
+instance11 = CLIPS::Environment.make_instance(env, env.find_defclass(:my_class), nil, foo: "Bar?")
+instance12 = env.make_instance(env.find_defclass(:my_class), nil, foo: "Bar...")
 ```
 
 #### `CLIPS::Environment.find_fact` / `CLIPS::Environment#find_fact`

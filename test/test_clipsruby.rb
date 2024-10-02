@@ -989,6 +989,106 @@ class ClipsrubyTest < Minitest::Test
     assert 0,
       env._eval("(find-all-instances ((?i my-class)) TRUE)").length
     refute instance.unmake
+
+    env.reset
+    instance = CLIPS::Environment.make_instance(env, "([foo] of my-class)")
+    assert instance
+    assert 1,
+      env._eval("(find-all-instances ((?i my-class)) TRUE)").length
+    refute CLIPS::Environment.make_instance(env, "(of non-existant)")
+    assert instance.defclass
+    assert_equal :"my-class",
+      instance.defclass.name
+    assert_equal :MAIN,
+      instance.defclass.defmodule_name
+    assert_equal :MAIN,
+      instance.defclass.defmodule.name
+    assert_equal "(defclass MAIN::my-class\n   (is-a USER))\n",
+      instance.defclass.pp_form
+    assert_equal :foo,
+      instance.name
+    assert_equal "[foo] of my-class",
+      instance.pp_form
+    assert instance.unmake
+    assert 0,
+      env._eval("(find-all-instances ((?i my-class)) TRUE)").length
+    refute instance.unmake
+  end
+
+  def test_make_instance_defclass_for_first_argument
+    env = CLIPS.create_environment
+    env.build("(defclass my-class (is-a USER) (slot foo) (multislot bar))")
+
+    defclass = env.find_defclass("my-class")
+    assert env.make_instance(defclass)
+    assert_equal({ foo: :nil, bar: [] },
+      env.make_instance(defclass).to_h)
+    assert_equal :gen3,
+      env.make_instance(defclass).name
+    assert_equal :my_name,
+      env.make_instance(defclass, :my_name).name
+    assert_equal :my_foo,
+      env.make_instance(defclass, { foo: :my_foo }).to_h[:foo]
+    assert_equal [1, 2.3, :hey, "there"],
+      env.make_instance(defclass, { bar: [1, 2.3, :hey, "there" ] }).to_h[:bar]
+    assert_equal :my_other_foo,
+      env.make_instance(defclass, :my_other_foo, { foo: :my_foo }).name
+    assert_equal :my_foo,
+      env.make_instance(defclass, nil, { foo: :my_foo }).to_h[:foo]
+    assert_equal({ foo: :nil, bar: [] },
+      env.make_instance(:"my-class").to_h)
+    assert_equal :gen8,
+      env.make_instance(:"my-class").name
+    assert_equal :my_name,
+      env.make_instance(:"my-class", :my_name).name
+    assert_equal :my_foo,
+      env.make_instance(:"my-class", { foo: :my_foo }).to_h[:foo]
+    assert_equal [1, 2.3, :hey, "there"],
+      env.make_instance(:"my-class", { bar: [1, 2.3, :hey, "there" ] }).to_h[:bar]
+    assert_equal :my_other_foo,
+      env.make_instance(:"my-class", :my_other_foo, { foo: :my_foo }).name
+    refute env.make_instance(:"not-a-class")
+    assert 16,
+      env._eval("(find-all-instances ((?i my-class)) TRUE)").length
+
+    env.reset
+
+    defclass = env.find_defclass("my-class")
+    assert 0,
+      env._eval("(find-all-instances ((?i my-class)) TRUE)").length
+    assert CLIPS::Environment.make_instance(env, defclass)
+    assert_equal({ foo: :nil, bar: [] },
+      CLIPS::Environment.make_instance(env, defclass).to_h)
+    assert_equal :gen13,
+      CLIPS::Environment.make_instance(env, defclass).name
+    assert_equal :my_name,
+      CLIPS::Environment.make_instance(env, defclass, :my_name).name
+    assert_equal :my_foo,
+      CLIPS::Environment.make_instance(env, defclass, { foo: :my_foo }).to_h[:foo]
+    assert_equal [1, 2.3, :hey, "there"],
+      CLIPS::Environment.make_instance(env, defclass, { bar: [1, 2.3, :hey, "there" ] }).to_h[:bar]
+    assert_equal :my_other_foo,
+      CLIPS::Environment.make_instance(env, defclass, :my_other_foo, { foo: :my_foo }).name
+    assert_equal :my_foo,
+      CLIPS::Environment.make_instance(env, defclass, nil, { foo: :my_foo }).to_h[:foo]
+    assert CLIPS::Environment.make_instance(env, :"my-class")
+    assert_equal({ foo: :nil, bar: [] },
+      CLIPS::Environment.make_instance(env, :"my-class").to_h)
+    assert_equal :gen19,
+      CLIPS::Environment.make_instance(env, :"my-class").name
+    assert_equal :my_name,
+      CLIPS::Environment.make_instance(env, :"my-class", :my_name).name
+    assert_equal :my_foo,
+      CLIPS::Environment.make_instance(env, :"my-class", { foo: :my_foo }).to_h[:foo]
+    assert_equal [1, 2.3, :hey, "there"],
+      CLIPS::Environment.make_instance(env, :"my-class", { bar: [1, 2.3, :hey, "there" ] }).to_h[:bar]
+    assert_equal :my_other_foo,
+      CLIPS::Environment.make_instance(env, :"my-class", :my_other_foo, { foo: :my_foo }).name
+    assert_equal :my_foo,
+      CLIPS::Environment.make_instance(env, :"my-class", nil, { foo: :my_foo }).to_h[:foo]
+    refute CLIPS::Environment.make_instance(env, :"not-a-class")
+    assert 16,
+      env._eval("(find-all-instances ((?i my-class)) TRUE)").length
   end
 
   def test_superclasses_subclasses

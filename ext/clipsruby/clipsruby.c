@@ -476,31 +476,6 @@ static VALUE clips_environment_defclass_static_get_instance_list(int argc, VALUE
 }
 
 
-static VALUE clips_environment_make_instance(VALUE self, VALUE string)
-{
-	Environment *env;
-
-	TypedData_Get_Struct(self, Environment, &Environment_type, env);
-
-	Instance *instance = MakeInstance(env, StringValueCStr(string));
-
-	if (instance == NULL) {
-		return Qnil;
-	}
-
-	VALUE rb_instance =
-		TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Instance")), &Instance_type, instance);
-
-	rb_iv_set(rb_instance, "@environment", self);
-
-	return rb_instance;
-}
-
-static VALUE clips_environment_static_make_instance(VALUE self, VALUE rbEnvironment, VALUE string)
-{
-	return clips_environment_make_instance(rbEnvironment, string);
-}
-
 static VALUE clips_environment_instance_unmake(VALUE self)
 {
 	Instance *instance;
@@ -867,6 +842,329 @@ static VALUE clips_environment_assert_hash(VALUE self, VALUE deftemplate_name, V
 static VALUE clips_environment_static_assert_hash(VALUE self, VALUE environment, VALUE deftemplate_name, VALUE hash)
 {
 	return clips_environment_assert_hash(environment, deftemplate_name, hash);
+}
+
+static int _clips_environment_make_instance(VALUE key, VALUE value, VALUE args)
+{
+	const char *cslot_name;
+	switch(TYPE(key))
+	{
+		case T_SYMBOL:
+			cslot_name = rb_id2name(SYM2ID(key));
+			break;
+		case T_STRING:
+			cslot_name = StringValueCStr(key);
+			break;
+		default:
+			rb_raise(rb_eTypeError, "Slot name must be a String or a Symbol");
+			return ST_CONTINUE;
+	}
+
+	VALUE *ib_and_env = (VALUE*)args;
+	InstanceBuilder *ib = (InstanceBuilder*) ib_and_env[0];
+	Environment *env = (Environment*) ib_and_env[1];
+	CLIPSValue cv = VALUE_to_CLIPSValue(value, env);
+	handle_pse_error(IBPutSlot(ib, cslot_name, &cv), cslot_name);
+
+	return ST_CONTINUE;
+}
+
+static VALUE clips_environment_make_instance(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE first_argument, second_argument, third_argument, defclass_class, rb_instance;
+	Environment *env;
+	Defclass *defclass;
+	InstanceBuilder *ib;
+	Instance *instance;
+	const char *instance_name;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "12", &first_argument, &second_argument, &third_argument);
+
+	defclass_class = rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Defclass"));
+
+	// first argument must be a defclass
+	switch (TYPE(first_argument))
+	{
+		case T_OBJECT:
+		case T_DATA:
+			if (CLASS_OF(first_argument) == defclass_class) {
+				TypedData_Get_Struct(first_argument, Defclass, &Defclass_type, defclass);
+				ib = CreateInstanceBuilder(env, DefclassName(defclass));
+				break;
+			} else {
+				rb_warn("First argument must be a Defclass; first argument was an object, but not %s class; it was a %s", rb_class2name(defclass_class), rb_class2name(first_argument));
+				return Qnil;
+			}
+		case T_STRING:
+			ib = CreateInstanceBuilder(env, StringValueCStr(first_argument));
+			break;
+		case T_SYMBOL:
+			ib = CreateInstanceBuilder(env, rb_id2name(SYM2ID(first_argument)));
+			break;
+		default:
+			rb_warn("First argument must be a Defclass; type wasn't a Defclass, a string, or a symbol; it was a %s!", rb_class2name(rb_obj_class(first_argument)));
+			return Qnil;
+	}
+
+	switch (IBError(env))
+	{
+		case IBE_NO_ERROR:
+			break;
+		case IBE_NULL_POINTER_ERROR:
+			rb_warn("Could not make instance; null pointer error. This could be a bug in clipsruby!");
+			IBDispose(ib);
+			return Qnil;
+		case IBE_DEFCLASS_NOT_FOUND_ERROR:
+			IBDispose(ib);
+			switch (TYPE(first_argument)) {
+				case T_STRING:
+					instance = MakeInstance(env, StringValueCStr(first_argument));
+					break;
+				case T_SYMBOL:
+					instance = MakeInstance(env, rb_id2name(SYM2ID(first_argument)));
+					break;
+				default:
+					instance = NULL;
+					break;
+			}
+			if (instance == NULL) {
+				rb_warn("Could not make instance; defclass not found, and first argument was not a valid make-instance string!");
+				return Qnil;
+			} else {
+				rb_instance =
+					TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, instance);
+
+				rb_iv_set(rb_instance, "@environment", rbEnvironment);
+
+				return rb_instance;
+			}
+		case IBE_COULD_NOT_CREATE_ERROR:
+			rb_warn("Could not make instance; This could be a bug in clipsruby!");
+			IBDispose(ib);
+			return Qnil;
+		case IBE_RULE_NETWORK_ERROR:
+			rb_warn("Could not make instance; Rule network error!");
+			IBDispose(ib);
+			return Qnil;
+	}
+
+	void *args[2] = { (void *)ib, (void *)env };
+
+	switch(TYPE(second_argument))
+	{
+		case T_STRING:
+		case T_SYMBOL:
+			instance_name = rb_id2name(SYM2ID(second_argument));
+			break;
+		case T_NIL:
+			instance_name = NULL;
+			break;
+		case T_HASH:
+			instance_name = NULL;
+			rb_hash_foreach(second_argument, _clips_environment_make_instance, (VALUE)args);
+			break;
+		default:
+			rb_warn("Could not make instance; second argument must be the name of the new instance or the slot hash!");
+			IBDispose(ib);
+			return Qnil;
+	}
+
+	switch(TYPE(third_argument))
+	{
+		case T_NIL:
+			break;
+		case T_HASH:
+			rb_hash_foreach(third_argument, _clips_environment_make_instance, (VALUE)args);
+			break;
+		default:
+			rb_warn("Could not make instance; third argument must be nil or the slot hash!");
+			IBDispose(ib);
+			return Qnil;
+	}
+
+	if ((instance = IBMake(ib, instance_name)) == NULL)
+	{
+		switch (IBError(env))
+		{
+			case IBE_NO_ERROR:
+				break;
+			case IBE_NULL_POINTER_ERROR:
+				rb_warn("Could not make instance; null pointer error. This could be a bug in clipsruby!");
+				IBDispose(ib);
+				return Qnil;
+			case IBE_DEFCLASS_NOT_FOUND_ERROR:
+				rb_warn("Could not make instance; defclass not found!");
+				IBDispose(ib);
+				return Qnil;
+			case IBE_COULD_NOT_CREATE_ERROR:
+				rb_warn("Could not make instance; This could be a bug in clipsruby!");
+				IBDispose(ib);
+				return Qnil;
+			case IBE_RULE_NETWORK_ERROR:
+				rb_warn("Could not make instance; Rule network error!");
+				IBDispose(ib);
+				return Qnil;
+		}
+	}
+
+	IBDispose(ib);
+
+	rb_instance =
+		TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, instance);
+
+	rb_iv_set(rb_instance, "@environment", rbEnvironment);
+
+	return rb_instance;
+}
+
+static VALUE clips_environment_static_make_instance(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, first_argument, second_argument, third_argument, defclass_class, rb_instance;
+	Environment *env;
+	Defclass *defclass;
+	InstanceBuilder *ib;
+	Instance *instance;
+	const char *instance_name;
+
+	rb_scan_args(argc, argv, "22", &rbEnvironment, &first_argument, &second_argument, &third_argument);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	defclass_class = rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Defclass"));
+
+	// first argument must be a defclass
+	switch (TYPE(first_argument))
+	{
+		case T_OBJECT:
+		case T_DATA:
+			if (CLASS_OF(first_argument) == defclass_class) {
+				TypedData_Get_Struct(first_argument, Defclass, &Defclass_type, defclass);
+				ib = CreateInstanceBuilder(env, DefclassName(defclass));
+				break;
+			} else {
+				rb_warn("First argument must be a Defclass; first argument was an object, but not %s class; it was a %s", rb_class2name(defclass_class), rb_class2name(first_argument));
+				return Qnil;
+			}
+		case T_STRING:
+			ib = CreateInstanceBuilder(env, StringValueCStr(first_argument));
+			break;
+		case T_SYMBOL:
+			ib = CreateInstanceBuilder(env, rb_id2name(SYM2ID(first_argument)));
+			break;
+		default:
+			rb_warn("First argument must be a Defclass; type wasn't a Defclass, a string, or a symbol; it was a %s!", rb_class2name(rb_obj_class(first_argument)));
+			return Qnil;
+	}
+
+	switch (IBError(env))
+	{
+		case IBE_NO_ERROR:
+			break;
+		case IBE_NULL_POINTER_ERROR:
+			rb_warn("Could not make instance; null pointer error. This could be a bug in clipsruby!");
+			IBDispose(ib);
+			return Qnil;
+		case IBE_DEFCLASS_NOT_FOUND_ERROR:
+			IBDispose(ib);
+			switch (TYPE(first_argument)) {
+				case T_STRING:
+					instance = MakeInstance(env, StringValueCStr(first_argument));
+					break;
+				case T_SYMBOL:
+					instance = MakeInstance(env, rb_id2name(SYM2ID(first_argument)));
+					break;
+				default:
+					instance = NULL;
+					break;
+			}
+			if (instance == NULL) {
+				rb_warn("Could not make instance; defclass not found, and first argument was not a valid make-instance string!");
+				return Qnil;
+			} else {
+				rb_instance =
+					TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, instance);
+
+				rb_iv_set(rb_instance, "@environment", rbEnvironment);
+
+				return rb_instance;
+			}
+		case IBE_COULD_NOT_CREATE_ERROR:
+			rb_warn("Could not make instance; This could be a bug in clipsruby!");
+			IBDispose(ib);
+			return Qnil;
+		case IBE_RULE_NETWORK_ERROR:
+			rb_warn("Could not make instance; Rule network error!");
+			IBDispose(ib);
+			return Qnil;
+	}
+
+	void *args[2] = { (void *)ib, (void *)env };
+
+	switch(TYPE(second_argument))
+	{
+		case T_STRING:
+		case T_SYMBOL:
+			instance_name = rb_id2name(SYM2ID(second_argument));
+			break;
+		case T_NIL:
+			instance_name = NULL;
+			break;
+		case T_HASH:
+			instance_name = NULL;
+			rb_hash_foreach(second_argument, _clips_environment_make_instance, (VALUE)args);
+			break;
+		default:
+			rb_warn("Could not make instance; second argument must be the name of the new instance or the slot hash!");
+			IBDispose(ib);
+			return Qnil;
+	}
+
+	switch(TYPE(third_argument))
+	{
+		case T_NIL:
+			break;
+		case T_HASH:
+			rb_hash_foreach(third_argument, _clips_environment_make_instance, (VALUE)args);
+			break;
+		default:
+			rb_warn("Could not make instance; third argument must be nil or the slot hash!");
+			IBDispose(ib);
+			return Qnil;
+	}
+
+	if ((instance = IBMake(ib, instance_name)) == NULL)
+	{
+		switch (IBError(env))
+		{
+			case IBE_NO_ERROR:
+				break;
+			case IBE_NULL_POINTER_ERROR:
+				rb_warn("Could not make instance; null pointer error. This could be a bug in clipsruby!");
+				IBDispose(ib);
+				return Qnil;
+			case IBE_DEFCLASS_NOT_FOUND_ERROR:
+				rb_warn("Could not make instance; defclass not found!");
+				IBDispose(ib);
+				return Qnil;
+			case IBE_COULD_NOT_CREATE_ERROR:
+				rb_warn("Could not make instance; This could be a bug in clipsruby!");
+				IBDispose(ib);
+				return Qnil;
+			case IBE_RULE_NETWORK_ERROR:
+				rb_warn("Could not make instance; Rule network error!");
+				IBDispose(ib);
+				return Qnil;
+		}
+	}
+
+	IBDispose(ib);
+
+	rb_instance =
+		TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Instance")), &Instance_type, instance);
+
+	rb_iv_set(rb_instance, "@environment", rbEnvironment);
+
+	return rb_instance;
 }
 
 static VALUE clips_environment_deftemplate_assert_hash(VALUE self, VALUE hash)
@@ -4377,8 +4675,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "unwatch_focus", clips_environment_unwatch_focus, 0);
 	rb_define_singleton_method(rbEnvironment, "get_watch_state", clips_environment_static_get_watch_state, 2);
 	rb_define_method(rbEnvironment, "get_watch_state", clips_environment_get_watch_state, 1);
-	rb_define_singleton_method(rbEnvironment, "make_instance", clips_environment_static_make_instance, 2);
-	rb_define_method(rbEnvironment, "make_instance", clips_environment_make_instance, 1);
+	rb_define_singleton_method(rbEnvironment, "make_instance", clips_environment_static_make_instance, -1);
+	rb_define_method(rbEnvironment, "make_instance", clips_environment_make_instance, -1);
 
 	VALUE rbDeffacts = rb_define_class_under(rbEnvironment, "Deffacts", rb_cObject);
 	rb_define_alloc_func(rbDeffacts, deffacts_alloc);
