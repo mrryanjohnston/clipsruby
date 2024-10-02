@@ -315,8 +315,7 @@ CLIPS::Environment.find_definstance(:a, :my_module, true)
 env.find_definstance("foo", nil, true)
 ```
 
-### `CLIPS::Environment.find_defmodule`
-### `CLIPS::Environment#find_defmodule`
+#### `CLIPS::Environment.find_defmodule` / `CLIPS::Environment#find_defmodule`
 
 Finds a defmodule by name and returns a CLIPS::Environment::Defmodule object
 
