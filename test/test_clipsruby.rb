@@ -1160,4 +1160,72 @@ class ClipsrubyTest < Minitest::Test
     assert_equal({foo: 123, bar: :nil, baz: :nil, bat: :nil, "another-slot": :nil},
      CLIPS::Environment::Instance.to_h(env.make_instance("(of my-other-class (foo 123))"), true))
   end
+
+  def test_save_load_bsave_bload_instances
+    env = CLIPS.create_environment
+    env.build("(defmodule MAIN (export ?ALL))")
+    env.build("(defclass my-class (is-a USER) (slot foo) (slot bar) (slot baz) (slot bat))")
+    env.build("(defmodule my-module (import MAIN defclass my-class))")
+    env.build("(defclass my-other-class (is-a my-class) (slot another-slot))")
+    env.make_instance(:"MAIN::my-class")
+    env.make_instance(:"MAIN::my-class")
+    env.make_instance(:"my-module::my-other-class")
+    env.make_instance(:"my-module::my-other-class")
+    env.make_instance(:"my-module::my-other-class")
+    assert env.save_instances("test/load_instances.clp")
+    assert env.save_instances("test/load_local_instances.clp", :local)
+    assert env.save_instances("test/load_visible_instances.clp", :visible)
+    refute env.save_instances("test/load_visible_instances.clp", :something_else)
+
+    assert env.bsave_instances("test/bload_instances.clp")
+    assert env.bsave_instances("test/bload_local_instances.clp", :local)
+    assert env.bsave_instances("test/bload_visible_instances.clp", :visible)
+    refute env.bsave_instances("test/bload_visible_instances.clp", :something_else)
+
+    env.reset
+    env.set_current_module(env.find_defmodule(:"my-module"))
+
+    assert_equal 0,
+      env.get_instance_list.length
+    env.load_instances("test/load_instances.clp")
+    assert_equal 3,
+      env.get_instance_list.length
+
+    env.reset
+    env.set_current_module(env.find_defmodule(:"my-module"))
+
+    env.load_instances("test/load_local_instances.clp")
+    assert_equal 3,
+      env.get_instance_list.length
+
+    env.reset
+    env.set_current_module(env.find_defmodule(:"my-module"))
+
+    env.load_instances("test/load_visible_instances.clp")
+    assert_equal 5,
+      env.get_instance_list.length
+
+    env.reset
+    env.set_current_module(env.find_defmodule(:"my-module"))
+
+    assert_equal 0,
+      env.get_instance_list.length
+    env.bload_instances("test/bload_instances.clp")
+    assert_equal 3,
+      env.get_instance_list.length
+
+    env.reset
+    env.set_current_module(env.find_defmodule(:"my-module"))
+
+    env.bload_instances("test/bload_local_instances.clp")
+    assert_equal 3,
+      env.get_instance_list.length
+
+    env.reset
+    env.set_current_module(env.find_defmodule(:"my-module"))
+
+    env.bload_instances("test/bload_visible_instances.clp")
+    assert_equal 5,
+      env.get_instance_list.length
+  end
 end

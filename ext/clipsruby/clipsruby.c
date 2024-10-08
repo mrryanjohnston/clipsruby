@@ -1984,6 +1984,74 @@ static VALUE clips_environment_static_load_facts(VALUE self, VALUE rbEnvironment
 	return clips_environment_load_facts(rbEnvironment, path);
 }
 
+static VALUE clips_environment_save_instances(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE path, scope;
+	Environment *env;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "11", &path, &scope);
+	if (NIL_P(scope)) {
+		scope = ID2SYM(rb_intern("local"));
+	}
+
+	int number_of_instances_saved;
+
+	if (scope == ID2SYM(rb_intern("visible"))) {
+		number_of_instances_saved = SaveInstances(env, StringValueCStr(path), VISIBLE_SAVE);
+	} else if (scope == ID2SYM(rb_intern("local"))) {
+		number_of_instances_saved = SaveInstances(env, StringValueCStr(path), LOCAL_SAVE);
+	} else {
+		rb_warn("could not save_instances: unsupported scope.");
+		return Qnil;
+	}
+	return INT2NUM(number_of_instances_saved);
+}
+
+static VALUE clips_environment_static_save_instances(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, path, scope;
+	Environment *env;
+
+	rb_scan_args(argc, argv, "21", &rbEnvironment, &path, &scope);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	if (NIL_P(scope)) {
+		scope = ID2SYM(rb_intern("local"));
+	}
+
+	int number_of_instances_saved;
+
+	if (scope == ID2SYM(rb_intern("visible"))) {
+		number_of_instances_saved = SaveInstances(env, StringValueCStr(path), VISIBLE_SAVE);
+	} else if (scope == ID2SYM(rb_intern("local"))) {
+		number_of_instances_saved = SaveInstances(env, StringValueCStr(path), LOCAL_SAVE);
+	} else {
+		rb_warn("could not save_instances: unsupported scope.");
+		return Qnil;
+	}
+	return INT2NUM(number_of_instances_saved);
+}
+
+static VALUE clips_environment_load_instances(VALUE self, VALUE path)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+	int number_of_instances_loaded = LoadInstances(env, StringValueCStr(path));
+
+	if (number_of_instances_loaded == -1) {
+		return Qnil;
+	} else {
+		return INT2NUM(number_of_instances_loaded);
+	}
+}
+
+static VALUE clips_environment_static_load_instances(VALUE self, VALUE rbEnvironment, VALUE path)
+{
+	return clips_environment_load_instances(rbEnvironment, path);
+}
+
 static VALUE clips_environment_bsave(VALUE self, VALUE path)
 {
 	Environment *env;
@@ -2088,6 +2156,76 @@ static VALUE clips_environment_static_bload_facts(VALUE self, VALUE rbEnvironmen
 {
 	return clips_environment_bload_facts(rbEnvironment, path);
 }
+
+static VALUE clips_environment_bsave_instances(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE path, scope;
+	Environment *env;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "11", &path, &scope);
+	if (NIL_P(scope)) {
+		scope = ID2SYM(rb_intern("local"));
+	}
+
+	int number_of_instances_saved;
+
+	if (scope == ID2SYM(rb_intern("visible"))) {
+		number_of_instances_saved = BinarySaveInstances(env, StringValueCStr(path), VISIBLE_SAVE);
+	} else if (scope == ID2SYM(rb_intern("local"))) {
+		number_of_instances_saved = BinarySaveInstances(env, StringValueCStr(path), LOCAL_SAVE);
+	} else {
+		rb_warn("could not bsave_instances: unsupported scope.");
+		return Qnil;
+	}
+
+	return INT2NUM(number_of_instances_saved);
+}
+
+static VALUE clips_environment_static_bsave_instances(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, path, scope;
+	Environment *env;
+
+	rb_scan_args(argc, argv, "21", &rbEnvironment, &path, &scope);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	if (NIL_P(scope)) {
+		scope = ID2SYM(rb_intern("local"));
+	}
+
+	int number_of_instances_saved;
+
+	if (scope == ID2SYM(rb_intern("visible"))) {
+		number_of_instances_saved = BinarySaveInstances(env, StringValueCStr(path), VISIBLE_SAVE);
+	} else if (scope == ID2SYM(rb_intern("local"))) {
+		number_of_instances_saved = BinarySaveInstances(env, StringValueCStr(path), LOCAL_SAVE);
+	} else {
+		rb_warn("could not bsave_instances: unsupported scope.");
+		return Qnil;
+	}
+	return INT2NUM(number_of_instances_saved);
+}
+
+static VALUE clips_environment_bload_instances(VALUE self, VALUE path)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+	int number_of_instances_loaded = BinaryLoadInstances(env, StringValueCStr(path));
+
+	if (number_of_instances_loaded == -1) {
+		return Qnil;
+	} else {
+		return INT2NUM(number_of_instances_loaded);
+	}
+}
+
+static VALUE clips_environment_static_bload_instances(VALUE self, VALUE rbEnvironment, VALUE path)
+{
+	return clips_environment_bload_instances(rbEnvironment, path);
+}
+
 
 static VALUE clips_environment_fact_slot_names(VALUE self)
 {
@@ -4573,6 +4711,10 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "save_facts", clips_environment_save_facts, -1);
 	rb_define_singleton_method(rbEnvironment, "load_facts", clips_environment_static_load_facts, 2);
 	rb_define_method(rbEnvironment, "load_facts", clips_environment_load_facts, 1);
+	rb_define_singleton_method(rbEnvironment, "save_instances", clips_environment_static_save_instances, -1);
+	rb_define_method(rbEnvironment, "save_instances", clips_environment_save_instances, -1);
+	rb_define_singleton_method(rbEnvironment, "load_instances", clips_environment_static_load_instances, 2);
+	rb_define_method(rbEnvironment, "load_instances", clips_environment_load_instances, 1);
 	rb_define_singleton_method(rbEnvironment, "bsave", clips_environment_static_bsave, 2);
 	rb_define_method(rbEnvironment, "bsave", clips_environment_bsave, 1);
 	rb_define_singleton_method(rbEnvironment, "bload", clips_environment_static_bload, 2);
@@ -4581,6 +4723,10 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "bsave_facts", clips_environment_bsave_facts, -1);
 	rb_define_singleton_method(rbEnvironment, "bload_facts", clips_environment_static_bload_facts, 2);
 	rb_define_method(rbEnvironment, "bload_facts", clips_environment_bload_facts, 1);
+	rb_define_singleton_method(rbEnvironment, "bsave_instances", clips_environment_static_bsave_instances, -1);
+	rb_define_method(rbEnvironment, "bsave_instances", clips_environment_bsave_instances, -1);
+	rb_define_singleton_method(rbEnvironment, "bload_instances", clips_environment_static_bload_instances, 2);
+	rb_define_method(rbEnvironment, "bload_instances", clips_environment_bload_instances, 1);
 	rb_define_singleton_method(rbEnvironment, "find_defrule", clips_environment_static_find_defrule, 2);
 	rb_define_method(rbEnvironment, "find_defrule", clips_environment_find_defrule, 1);
 	rb_define_singleton_method(rbEnvironment, "find_defmodule", clips_environment_static_find_defmodule, 2);
