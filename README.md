@@ -401,6 +401,15 @@ CLIPS::Environment.find_defmodule(:a)
 env.find_defmodule("foo")
 ```
 
+#### `CLIPS::Environment.get_activation_list` / `CLIPS::Environment#get_activation_list`
+
+Return an array of Activation objects in the current demodule.
+
+```ruby
+CLIPS::Environment.get_activation_list
+env.get_activation_list
+```
+
 #### `CLIPS::Environment.get_defclass_list` / `CLIPS::Environment#get_defclass_list`
 
 Return an array of Defclass names as symbols in the environment. Pass an argument of a
@@ -850,6 +859,19 @@ CLIPS::Environment::Defrule.salience(defrule)
 defrule.salience
 ```
 
+#### `CLIPS::Environment::Defrule.matches` / `CLIPS::Environment::Defrule#matches`
+
+Returns an array holding the number of pattern matches, partial matches,
+and activations for a given rule. Pass a first argument of
+`:verbose`, `:succinct`, or `:terse` to determine the amount of information
+to print to `STDOUT` (`:verbose` by default).
+
+```ruby
+CLIPS::Environment::Defrule.matches(defrule, :succinct)
+defrule.matches(:terse)
+[pattern, partial, activations] = defrule.matches
+```
+
 ### Defmodule Methods
 
 #### `CLIPS::Environment::Defmodule.name` / `CLIPS::Environment::Defmodule#name`
@@ -1139,6 +1161,17 @@ Returns a pretty printed string representation of the Deffacts
 ```ruby
 CLIPS::Environment::Deffacts.pp_form(deffacts)
 deffacts.pp_form
+```
+
+### Activation Methods
+
+#### `CLIPS::Environment::Activation.defule_name` / `CLIPS::Environment::Activation#defule_name`
+
+Returns the name of a defrule that triggered this activation.
+
+```ruby
+CLIPS::Environment::Activation.defrule_name
+activation.defrule_name
 ```
 
 ## Running the tests

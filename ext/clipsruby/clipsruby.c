@@ -103,6 +103,18 @@ static const rb_data_type_t Instance_type = {
 	.flags = RUBY_TYPED_FREE_IMMEDIATELY
 };
 
+size_t activation_size(const void *data)
+{
+	return sizeof(Activation);
+}
+
+static const rb_data_type_t Activation_type = {
+	.function = {
+		.dsize = activation_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 static VALUE clips_environment_fact_deftemplate(VALUE self)
 {
 	VALUE rbDeftemplate, rbEnvironment;
@@ -274,6 +286,11 @@ VALUE fact_alloc(VALUE self)
 VALUE instance_alloc(VALUE self)
 {
 	return TypedData_Wrap_Struct(self, &Instance_type, NULL);
+}
+
+VALUE activation_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Activation_type, NULL);
 }
 
 VALUE environment_alloc(VALUE self)
@@ -1627,6 +1644,63 @@ static VALUE clips_environment_defclass_static_slots(int argc, VALUE *argv, VALU
 	rbEnvironment = rb_iv_get(rbDefclass, "@environment");
 
 	ClassSlots(defclass, &value, RTEST(inherit));
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_defrule_matches(int argc, VALUE *argv, VALUE rbDefrule)
+{
+	VALUE verbosity, rbEnvironment, out;
+	Defrule *defrule;
+	CLIPSValue value;
+
+	rb_scan_args(argc, argv, "01", &verbosity);
+
+	TypedData_Get_Struct(rbDefrule, Defrule, &Defrule_type, defrule);
+
+	rbEnvironment = rb_iv_get(rbDefrule, "@environment");
+
+	if (NIL_P(verbosity) || verbosity == ID2SYM(rb_intern("verbose"))) {
+		Matches(defrule, VERBOSE, &value);
+	} else if (verbosity == ID2SYM(rb_intern("succinct"))) {
+		Matches(defrule, SUCCINCT, &value);
+	} else if (verbosity == ID2SYM(rb_intern("terse"))) {
+		Matches(defrule, TERSE, &value);
+	} else {
+		rb_warn("could not find matches for defrule: unsupported verbosity.");
+		return Qnil;
+	}
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+
+static VALUE clips_environment_defrule_static_matches(int argc, VALUE *argv, VALUE klass)
+{
+	VALUE rbDefrule, verbosity, rbEnvironment, out;
+	Defrule *defrule;
+	CLIPSValue value;
+
+	rb_scan_args(argc, argv, "11", &rbDefrule, &verbosity);
+
+	TypedData_Get_Struct(rbDefrule, Defrule, &Defrule_type, defrule);
+
+	rbEnvironment = rb_iv_get(rbDefrule, "@environment");
+
+	if (verbosity == ID2SYM(rb_intern("verbose"))) {
+		Matches(defrule, VERBOSE, &value);
+	} else if (verbosity == ID2SYM(rb_intern("succinct"))) {
+		Matches(defrule, SUCCINCT, &value);
+	} else if (verbosity == ID2SYM(rb_intern("terse"))) {
+		Matches(defrule, TERSE, &value);
+	} else {
+		rb_warn("could not find matches for defrule: unsupported verbosity.");
+		return Qnil;
+	}
 
 	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
 
@@ -3748,6 +3822,36 @@ static VALUE clips_environment_static_get_defmodule_list(VALUE self, VALUE rbEnv
 	return clips_environment_get_defmodule_list(rbEnvironment);
 }
 
+static VALUE clips_environment_get_activation_list(VALUE self)
+{
+	Activation *theActivation;
+	Environment *env;
+	VALUE rbActivation, returnArray;
+
+	returnArray = rb_ary_new2(0);
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	for (
+		theActivation = GetNextActivation(env,NULL);
+		theActivation != NULL;
+		theActivation = GetNextActivation(env,theActivation)
+	) {
+		rbActivation =
+			TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Activation")), &Activation_type, theActivation);
+
+		rb_iv_set(rbActivation, "@environment", self);
+		rb_ary_push(returnArray, rbActivation);
+	}
+
+	return returnArray;
+}
+
+static VALUE clips_environment_static_get_activation_list(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_get_activation_list(rbEnvironment);
+}
+
 static VALUE clips_environment_defrule_name(VALUE self)
 {
 	Defrule *defrule;
@@ -4672,6 +4776,21 @@ static VALUE clips_environment_static_get_watch_state(VALUE self, VALUE rbEnviro
 	return clips_environment_get_watch_state(rbEnvironment, item);
 }
 
+static VALUE clips_environment_activation_defrule_name(VALUE self)
+{
+	Activation *activation;
+
+	TypedData_Get_Struct(self, Activation, &Activation_type, activation);
+
+	return ID2SYM(rb_intern(ActivationRuleName(activation)));
+}
+
+static VALUE clips_environment_activation_static_defrule_name(VALUE self, VALUE rbActivation)
+{
+	return clips_environment_activation_defrule_name(rbActivation);
+}
+
+
 void Init_clipsruby(void)
 {
 	VALUE rbCLIPS = rb_define_module("CLIPS");
@@ -4753,6 +4872,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "get_defrule_list", clips_environment_get_defrule_list, -1);
 	rb_define_singleton_method(rbEnvironment, "get_defmodule_list", clips_environment_static_get_defmodule_list, 1);
 	rb_define_method(rbEnvironment, "get_defmodule_list", clips_environment_get_defmodule_list, 0);
+	rb_define_singleton_method(rbEnvironment, "get_activation_list", clips_environment_static_get_activation_list, 1);
+	rb_define_method(rbEnvironment, "get_activation_list", clips_environment_get_activation_list, 0);
 	rb_define_singleton_method(rbEnvironment, "find_deffacts", clips_environment_static_find_deffacts, 2);
 	rb_define_method(rbEnvironment, "find_deffacts", clips_environment_find_deffacts, 1);
 	rb_define_singleton_method(rbEnvironment, "watch", clips_environment_static_watch, 2);
@@ -4930,6 +5051,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefrule, "defmodule_name", clips_environment_defrule_defmodule_name, 0);
 	rb_define_singleton_method(rbDefrule, "defmodule", clips_environment_defrule_static_defmodule, 1);
 	rb_define_method(rbDefrule, "defmodule", clips_environment_defrule_defmodule, 0);
+	rb_define_singleton_method(rbDefrule, "matches", clips_environment_defrule_static_matches, -1);
+	rb_define_method(rbDefrule, "matches", clips_environment_defrule_matches, -1);
 
 	VALUE rbDefclass = rb_define_class_under(rbEnvironment, "Defclass", rb_cObject);
 	rb_define_alloc_func(rbDefclass, defclass_alloc);
@@ -4964,4 +5087,9 @@ void Init_clipsruby(void)
 	rb_define_method(rbInstance, "pp_form", clips_environment_instance_pp_form, 0);
 	rb_define_singleton_method(rbInstance, "to_h", clips_environment_instance_static_to_h, -1);
 	rb_define_method(rbInstance, "to_h", clips_environment_instance_to_h, -1);
+
+	VALUE rbActivation = rb_define_class_under(rbEnvironment, "Activation", rb_cObject);
+	rb_define_alloc_func(rbActivation, activation_alloc);
+	rb_define_singleton_method(rbActivation, "defrule_name", clips_environment_activation_static_defrule_name, 1);
+	rb_define_method(rbActivation, "defrule_name", clips_environment_activation_defrule_name, 0);
 }

@@ -1228,4 +1228,58 @@ class ClipsrubyTest < Minitest::Test
     assert_equal 5,
       env.get_instance_list.length
   end
+
+  def test_matches_get_activation_list_activation_defrule_name
+    env = CLIPS.create_environment
+    env.build("(defrule a =>)")
+    env.build("(defrule b (a) =>)")
+    env.build("(defrule c (b) (a) =>)")
+    env.build("(defrule d (a b) (a) =>)")
+    env.build("(defrule e (a $b) (a) =>)")
+    env.build("(defrule f (a) (a) =>)")
+    env.build("(defrule g (c) (a) =>)")
+    env.build("(defrule h (c) (a) (a) =>)")
+    env.assert_string("(a)")
+    a = env.find_defrule(:a)
+    assert_equal [1, 0, 1],
+      a.matches(:terse)
+    b = env.find_defrule(:b)
+    assert_equal [1, 0, 1],
+      b.matches(:terse)
+    c = env.find_defrule(:c)
+    assert_equal [1, 0, 0],
+      c.matches(:terse)
+    d = env.find_defrule(:d)
+    assert_equal [1, 0, 0],
+      d.matches(:terse)
+    e = env.find_defrule(:e)
+    assert_equal [1, 0, 0],
+      e.matches(:terse)
+    f = env.find_defrule(:f)
+    assert_equal [2, 1, 1],
+      f.matches(:terse)
+
+    activations = env.get_activation_list
+    assert_equal 3,
+      activations.length
+    assert_equal [:b, :f, :a],
+      activations.map(&:defrule_name)
+
+    env.assert_string("(c)")
+
+    g = env.find_defrule(:g)
+    assert_equal [2, 1, 1],
+      g.matches(:terse)
+
+    h = env.find_defrule(:h)
+    assert_equal [3, 2, 1],
+      h.matches(:terse)
+
+    activations = env.get_activation_list
+    assert_equal 5,
+      activations.length
+    assert_equal [:g, :h, :b, :f, :a],
+      activations.map(&:defrule_name)
+
+  end 
 end
