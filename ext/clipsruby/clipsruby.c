@@ -3027,6 +3027,53 @@ static VALUE clips_environment_defmodule_static_find_instance(int argc, VALUE *a
 	}
 }
 
+static VALUE clips_environment_defmodule_refresh_agenda(VALUE self)
+{
+	Defmodule *module;
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
+
+	RefreshAgenda(module);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_defmodule_static_refresh_agenda(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_refresh_agenda(rbDefmodule);
+}
+
+static VALUE clips_environment_defmodule_reorder_agenda(VALUE self)
+{
+	Defmodule *module;
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
+
+	ReorderAgenda(module);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_defmodule_static_reorder_agenda(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_reorder_agenda(rbDefmodule);
+}
+
+static VALUE clips_environment_defmodule_delete_all_activations(VALUE self)
+{
+	Defmodule *module;
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
+
+	DeleteAllActivations(module);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_defmodule_static_delete_all_activations(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_delete_all_activations(rbDefmodule);
+}
 
 static VALUE clips_environment_find_deftemplate(VALUE self, VALUE deftemplate_name)
 {
@@ -4776,6 +4823,238 @@ static VALUE clips_environment_static_get_watch_state(VALUE self, VALUE rbEnviro
 	return clips_environment_get_watch_state(rbEnvironment, item);
 }
 
+static VALUE clips_environment_refresh_all_agendas(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	RefreshAllAgendas(env);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_refresh_all_agendas(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_refresh_all_agendas(rbEnvironment);
+}
+
+static VALUE clips_environment_reorder_all_agendas(VALUE self)
+{
+	Environment *env;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	ReorderAllAgendas(env);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_reorder_all_agendas(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_reorder_all_agendas(rbEnvironment);
+}
+
+static VALUE clips_environment_get_agenda_changed(VALUE self)
+{
+	Environment *environment;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, environment);
+
+	return GetAgendaChanged(environment) ? Qtrue : Qfalse;
+}
+
+static VALUE clips_environment_static_get_agenda_changed(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_get_agenda_changed(rbEnvironment);
+}
+
+static VALUE clips_environment_set_agenda_changed(VALUE self, VALUE changed)
+{
+	Environment *environment;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, environment);
+
+	SetAgendaChanged(environment, changed == Qtrue);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_static_set_agenda_changed(VALUE self, VALUE rbEnvironment, VALUE changed)
+{
+	return clips_environment_set_agenda_changed(rbEnvironment, changed);
+}
+
+// copied from agenda.c, not exposed in agenda.h
+/*****************************************************************/
+/* SalienceEvaluationName: Given the integer value corresponding */
+/*   to a specified salience evaluation behavior, returns a      */
+/*   character string of the behavior's name.                    */
+/*****************************************************************/
+static const char *SalienceEvaluationName(
+  SalienceEvaluationType strategy)
+  {
+   const char *sname;
+
+   switch (strategy)
+     {
+      case WHEN_DEFINED:
+        sname = "when-defined";
+        break;
+      case WHEN_ACTIVATED:
+        sname = "when-activated";
+        break;
+      case EVERY_CYCLE:
+        sname = "every-cycle";
+        break;
+      default:
+        sname = "unknown";
+        break;
+     }
+
+   return sname;
+  }
+
+static VALUE clips_environment_get_salience_evaluation(VALUE self)
+{
+	Environment *environment;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, environment);
+
+	return ID2SYM(rb_intern(SalienceEvaluationName(GetSalienceEvaluation(environment))));
+}
+
+static VALUE clips_environment_static_get_salience_evaluation(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_get_salience_evaluation(rbEnvironment);
+}
+
+static VALUE clips_environment_set_salience_evaluation(VALUE self, VALUE changed)
+{
+	Environment *environment;
+	const char *argument, *oldValue;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, environment);
+
+	argument = rb_id2name(SYM2ID(changed));
+	oldValue = SalienceEvaluationName(GetSalienceEvaluation(environment));
+
+	if (strcmp(argument,"when-defined") == 0)
+	{ SetSalienceEvaluation(environment,WHEN_DEFINED); }
+	else if (strcmp(argument,"when-activated") == 0)
+	{ SetSalienceEvaluation(environment,WHEN_ACTIVATED); }
+	else if (strcmp(argument,"every-cycle") == 0)
+	{ SetSalienceEvaluation(environment,EVERY_CYCLE); }
+	else
+	{
+		rb_warn("set_salience_evaluation: symbol must be when-defined, when-activated, or every-cycle");
+		return Qfalse;
+	}
+
+	return ID2SYM(rb_intern(oldValue));
+}
+
+static VALUE clips_environment_static_set_salience_evaluation(VALUE self, VALUE rbEnvironment, VALUE changed)
+{
+	return clips_environment_set_salience_evaluation(rbEnvironment, changed);
+}
+
+// copied from crstrtgy.c
+// not exposed in crstrtgy.h
+/**********************************************************/
+/* GetStrategyName: Given the integer value corresponding */
+/*   to a specified strategy, return a character string   */
+/*   of the strategy's name.                              */
+/**********************************************************/
+static const char *GetStrategyName(
+  StrategyType strategy)
+  {
+   const char *sname;
+
+   switch (strategy)
+     {
+      case DEPTH_STRATEGY:
+        sname = "depth";
+        break;
+      case BREADTH_STRATEGY:
+        sname = "breadth";
+        break;
+      case LEX_STRATEGY:
+        sname = "lex";
+        break;
+      case MEA_STRATEGY:
+        sname = "mea";
+        break;
+      case COMPLEXITY_STRATEGY:
+        sname = "complexity";
+        break;
+      case SIMPLICITY_STRATEGY:
+        sname = "simplicity";
+        break;
+      case RANDOM_STRATEGY:
+        sname = "random";
+        break;
+      default:
+        sname = "unknown";
+        break;
+     }
+
+   return(sname);
+  }
+
+static VALUE clips_environment_get_strategy(VALUE self)
+{
+	Environment *environment;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, environment);
+
+	return ID2SYM(rb_intern(GetStrategyName(GetStrategy(environment))));
+}
+
+static VALUE clips_environment_static_get_strategy(VALUE self, VALUE rbEnvironment)
+{
+	return clips_environment_get_strategy(rbEnvironment);
+}
+
+static VALUE clips_environment_set_strategy(VALUE self, VALUE changed)
+{
+	Environment *environment;
+	const char *argument, *oldValue;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, environment);
+
+	argument = rb_id2name(SYM2ID(changed));
+	oldValue = GetStrategyName(GetStrategy(environment));
+
+	if (strcmp(argument,"depth") == 0)
+	{ SetStrategy(environment,DEPTH_STRATEGY); }
+	else if (strcmp(argument,"breadth") == 0)
+	{ SetStrategy(environment,BREADTH_STRATEGY); }
+	else if (strcmp(argument,"lex") == 0)
+	{ SetStrategy(environment,LEX_STRATEGY); }
+	else if (strcmp(argument,"mea") == 0)
+	{ SetStrategy(environment,MEA_STRATEGY); }
+	else if (strcmp(argument,"complexity") == 0)
+	{ SetStrategy(environment,COMPLEXITY_STRATEGY); }
+	else if (strcmp(argument,"simplicity") == 0)
+	{ SetStrategy(environment,SIMPLICITY_STRATEGY); }
+	else if (strcmp(argument,"random") == 0)
+	{ SetStrategy(environment,RANDOM_STRATEGY); }
+	else
+	{
+		rb_warn("set_strategy: symbol must be depth, breadth, lex, mea, complexity, simplicity, or random");
+		return Qfalse;
+	}
+
+	return ID2SYM(rb_intern(oldValue));
+}
+
+static VALUE clips_environment_static_set_strategy(VALUE self, VALUE rbEnvironment, VALUE changed)
+{
+	return clips_environment_set_strategy(rbEnvironment, changed);
+}
+
+
 static VALUE clips_environment_activation_defrule_name(VALUE self)
 {
 	Activation *activation;
@@ -4790,6 +5069,74 @@ static VALUE clips_environment_activation_static_defrule_name(VALUE self, VALUE 
 	return clips_environment_activation_defrule_name(rbActivation);
 }
 
+static VALUE clips_environment_activation_get_salience(VALUE self)
+{
+	Activation *activation;
+
+	TypedData_Get_Struct(self, Activation, &Activation_type, activation);
+
+	return LONG2NUM(ActivationGetSalience(activation));
+}
+
+static VALUE clips_environment_activation_static_get_salience(VALUE self, VALUE rbActivation)
+{
+	return clips_environment_activation_get_salience(rbActivation);
+}
+
+static VALUE clips_environment_activation_set_salience(VALUE self, VALUE salience)
+{
+	Activation *activation;
+
+	TypedData_Get_Struct(self, Activation, &Activation_type, activation);
+
+	return LONG2NUM(ActivationSetSalience(activation, NUM2LONG(salience)));
+}
+
+static VALUE clips_environment_activation_static_set_salience(VALUE self, VALUE rbActivation, VALUE salience)
+{
+	return clips_environment_activation_set_salience(rbActivation, salience);
+}
+
+static VALUE clips_environment_activation_pp_form(VALUE self)
+{
+	Environment *env;
+	Activation *activation;
+	StringBuilder *sb;
+	VALUE toReturn;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	sb = CreateStringBuilder(env, 0);
+
+	TypedData_Get_Struct(self, Activation, &Activation_type, activation);
+
+	ActivationPPForm(activation, sb);
+	toReturn = rb_str_new2(sb->contents);
+	SBDispose(sb);
+
+	return toReturn;
+}
+
+static VALUE clips_environment_activation_static_pp_form(VALUE self, VALUE rbActivation)
+{
+	return clips_environment_activation_pp_form(rbActivation);
+}
+
+static VALUE clips_environment_activation_delete_activation(VALUE self)
+{
+	Activation *activation;
+
+	TypedData_Get_Struct(self, Activation, &Activation_type, activation);
+
+	DeleteActivation(activation);
+
+	return Qnil;
+}
+
+static VALUE clips_environment_activation_static_delete_activation(VALUE self, VALUE rbActivation)
+{
+	return clips_environment_activation_delete_activation(rbActivation);
+}
 
 void Init_clipsruby(void)
 {
@@ -4944,6 +5291,22 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "get_watch_state", clips_environment_get_watch_state, 1);
 	rb_define_singleton_method(rbEnvironment, "make_instance", clips_environment_static_make_instance, -1);
 	rb_define_method(rbEnvironment, "make_instance", clips_environment_make_instance, -1);
+	rb_define_singleton_method(rbEnvironment, "refresh_all_agendas", clips_environment_static_refresh_all_agendas, 1);
+	rb_define_method(rbEnvironment, "refresh_all_agendas", clips_environment_refresh_all_agendas, 0);
+	rb_define_singleton_method(rbEnvironment, "reorder_all_agendas", clips_environment_static_reorder_all_agendas, 1);
+	rb_define_method(rbEnvironment, "reorder_all_agendas", clips_environment_reorder_all_agendas, 0);
+	rb_define_singleton_method(rbEnvironment, "get_agenda_changed", clips_environment_static_get_agenda_changed, 1);
+	rb_define_method(rbEnvironment, "get_agenda_changed", clips_environment_get_agenda_changed, 0);
+	rb_define_singleton_method(rbEnvironment, "set_agenda_changed", clips_environment_static_set_agenda_changed, 2);
+	rb_define_method(rbEnvironment, "set_agenda_changed", clips_environment_set_agenda_changed, 1);
+	rb_define_singleton_method(rbEnvironment, "get_salience_evaluation", clips_environment_static_get_salience_evaluation, 1);
+	rb_define_method(rbEnvironment, "get_salience_evaluation", clips_environment_get_salience_evaluation, 0);
+	rb_define_singleton_method(rbEnvironment, "set_salience_evaluation", clips_environment_static_set_salience_evaluation, 2);
+	rb_define_method(rbEnvironment, "set_salience_evaluation", clips_environment_set_salience_evaluation, 1);
+	rb_define_singleton_method(rbEnvironment, "get_strategy", clips_environment_static_get_strategy, 1);
+	rb_define_method(rbEnvironment, "get_strategy", clips_environment_get_strategy, 0);
+	rb_define_singleton_method(rbEnvironment, "set_strategy", clips_environment_static_set_strategy, 2);
+	rb_define_method(rbEnvironment, "set_strategy", clips_environment_set_strategy, 1);
 
 	VALUE rbDeffacts = rb_define_class_under(rbEnvironment, "Deffacts", rb_cObject);
 	rb_define_alloc_func(rbDeffacts, deffacts_alloc);
@@ -5007,6 +5370,12 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefmodule, "get_defrule_list", clips_environment_defmodule_get_defrule_list, 0);
 	rb_define_singleton_method(rbDefmodule, "find_instance", clips_environment_defmodule_static_find_instance, -1);
 	rb_define_method(rbDefmodule, "find_instance", clips_environment_defmodule_find_instance, -1);
+	rb_define_singleton_method(rbDefmodule, "refresh_agenda", clips_environment_defmodule_static_refresh_agenda, 1);
+	rb_define_method(rbDefmodule, "refresh_agenda", clips_environment_defmodule_refresh_agenda, 0);
+	rb_define_singleton_method(rbDefmodule, "reorder_agenda", clips_environment_defmodule_static_reorder_agenda, 1);
+	rb_define_method(rbDefmodule, "reorder_agenda", clips_environment_defmodule_reorder_agenda, 0);
+	rb_define_singleton_method(rbDefmodule, "delete_all_activations", clips_environment_defmodule_static_delete_all_activations, 1);
+	rb_define_method(rbDefmodule, "delete_all_activations", clips_environment_defmodule_delete_all_activations, 0);
 
 	VALUE rbFact = rb_define_class_under(rbEnvironment, "Fact", rb_cObject);
 	rb_define_alloc_func(rbFact, fact_alloc);
@@ -5092,4 +5461,12 @@ void Init_clipsruby(void)
 	rb_define_alloc_func(rbActivation, activation_alloc);
 	rb_define_singleton_method(rbActivation, "defrule_name", clips_environment_activation_static_defrule_name, 1);
 	rb_define_method(rbActivation, "defrule_name", clips_environment_activation_defrule_name, 0);
+	rb_define_singleton_method(rbActivation, "get_salience", clips_environment_activation_static_get_salience, 1);
+	rb_define_method(rbActivation, "get_salience", clips_environment_activation_get_salience, 0);
+	rb_define_singleton_method(rbActivation, "set_salience", clips_environment_activation_static_set_salience, 2);
+	rb_define_method(rbActivation, "set_salience", clips_environment_activation_set_salience, 1);
+	rb_define_singleton_method(rbActivation, "pp_form", clips_environment_activation_static_pp_form, 1);
+	rb_define_method(rbActivation, "pp_form", clips_environment_activation_pp_form, 0);
+	rb_define_singleton_method(rbActivation, "delete_activation", clips_environment_activation_static_delete_activation, 1);
+	rb_define_method(rbActivation, "delete_activation", clips_environment_activation_delete_activation, 0);
 }

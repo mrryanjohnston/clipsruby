@@ -1229,17 +1229,23 @@ class ClipsrubyTest < Minitest::Test
       env.get_instance_list.length
   end
 
-  def test_matches_get_activation_list_activation_defrule_name
+  def test_matches_get_activation_list_activation_defrule_name_get_salience_set_salience_refresh_agenda_refresh_all_agendas_reorder_agenda_reorder_all_agendas_pp_form_delete_activation_delete_all_activations_get_agenda_changed_set_agenda_changed
     env = CLIPS.create_environment
+    refute env.get_agenda_changed
     env.build("(defrule a =>)")
     env.build("(defrule b (a) =>)")
     env.build("(defrule c (b) (a) =>)")
     env.build("(defrule d (a b) (a) =>)")
     env.build("(defrule e (a $b) (a) =>)")
-    env.build("(defrule f (a) (a) =>)")
+    env.build("(defrule f (declare (salience 1)) (a) (a) =>)")
     env.build("(defrule g (c) (a) =>)")
     env.build("(defrule h (c) (a) (a) =>)")
+    assert_nil env.set_agenda_changed false
+    refute env.get_agenda_changed
+    assert_nil env.set_agenda_changed true
+    assert env.get_agenda_changed
     env.assert_string("(a)")
+    assert env.get_agenda_changed
     a = env.find_defrule(:a)
     assert_equal [1, 0, 1],
       a.matches(:terse)
@@ -1262,8 +1268,10 @@ class ClipsrubyTest < Minitest::Test
     activations = env.get_activation_list
     assert_equal 3,
       activations.length
-    assert_equal [:b, :f, :a],
+    assert_equal [:f, :b, :a],
       activations.map(&:defrule_name)
+    assert_equal [1, 0, 0],
+      activations.map(&:get_salience)
 
     env.assert_string("(c)")
 
@@ -1278,8 +1286,96 @@ class ClipsrubyTest < Minitest::Test
     activations = env.get_activation_list
     assert_equal 5,
       activations.length
-    assert_equal [:g, :h, :b, :f, :a],
+    assert_equal [:f, :g, :h, :b, :a],
       activations.map(&:defrule_name)
+    assert_equal [1, 0, 0, 0, 0],
+      activations.map(&:get_salience)
 
+    assert_equal 0,
+      activations[3].set_salience(10)
+    activations = env.get_activation_list
+    assert_equal [:f, :g, :h, :b, :a],
+      activations.map(&:defrule_name)
+    assert_equal [1, 0, 0, 10, 0],
+      activations.map(&:get_salience)
+    assert_nil env.refresh_all_agendas
+    activations = env.get_activation_list
+    assert_equal [:f, :g, :h, :b, :a],
+      activations.map(&:defrule_name)
+    assert_equal [1, 0, 0, 0, 0],
+      activations.map(&:get_salience)
+
+    assert_equal 0,
+      activations[3].set_salience(9)
+    activations = env.get_activation_list
+    assert_equal [:f, :g, :h, :b, :a],
+      activations.map(&:defrule_name)
+    assert_equal [1, 0, 0, 9, 0],
+      activations.map(&:get_salience)
+    defmodule = env.find_defmodule :MAIN
+    defmodule.refresh_agenda
+    activations = env.get_activation_list
+    assert_equal [:f, :g, :h, :b, :a],
+      activations.map(&:defrule_name)
+    assert_equal [1, 0, 0, 0, 0],
+      activations.map(&:get_salience)
+
+    assert_equal 0,
+      activations[3].set_salience(11)
+    activations = env.get_activation_list
+    assert_equal [:f, :g, :h, :b, :a],
+      activations.map(&:defrule_name)
+    assert_equal [1, 0, 0, 11, 0],
+      activations.map(&:get_salience)
+    assert_nil env.reorder_all_agendas
+    activations = env.get_activation_list
+    assert_equal [:b, :f, :g, :h, :a],
+      activations.map(&:defrule_name)
+    assert_equal [11, 1, 0, 0, 0],
+      activations.map(&:get_salience)
+
+    assert_equal 0,
+      activations[3].set_salience(9)
+    activations = env.get_activation_list
+    assert_equal [:b, :f, :g, :h, :a],
+      activations.map(&:defrule_name)
+    assert_equal [11, 1, 0, 9, 0],
+      activations.map(&:get_salience)
+    defmodule = env.find_defmodule :MAIN
+    defmodule.reorder_agenda
+    activations = env.get_activation_list
+    assert_equal [:b, :h, :f, :g, :a],
+      activations.map(&:defrule_name)
+    assert_equal [11, 9, 1, 0, 0],
+      activations.map(&:get_salience)
+
+    assert_equal ["11     b: f-1", "9      h: f-2,f-1,f-1", "1      f: f-1,f-1", "0      g: f-2,f-1", "0      a: *"],
+      activations.map(&:pp_form)
+
+    assert_nil activations[1].delete_activation
+    activations = env.get_activation_list
+    assert_equal [:b, :f, :g, :a],
+      activations.map(&:defrule_name)
+    defmodule = env.find_defmodule :MAIN
+    assert_nil defmodule.delete_all_activations
+    activations = env.get_activation_list
+    assert_equal [],
+      activations.map(&:defrule_name)
   end 
+
+  def test_get_strategy_get_salience_evaluation
+    env = CLIPS.create_environment
+    assert_equal :depth,
+      env.get_strategy
+    assert_equal :depth,
+      env.set_strategy(:breadth)
+    assert_equal :breadth,
+      env.get_strategy
+    assert_equal :"when-defined",
+      env.get_salience_evaluation
+    assert_equal :"when-defined",
+      env.set_salience_evaluation(:"when-activated")
+    assert_equal :"when-activated",
+      env.get_salience_evaluation
+  end
 end
