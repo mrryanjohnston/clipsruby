@@ -5122,7 +5122,7 @@ static VALUE clips_environment_activation_static_pp_form(VALUE self, VALUE rbAct
 	return clips_environment_activation_pp_form(rbActivation);
 }
 
-static VALUE clips_environment_activation_delete_activation(VALUE self)
+static VALUE clips_environment_activation_delete(VALUE self)
 {
 	Activation *activation;
 
@@ -5133,9 +5133,9 @@ static VALUE clips_environment_activation_delete_activation(VALUE self)
 	return Qnil;
 }
 
-static VALUE clips_environment_activation_static_delete_activation(VALUE self, VALUE rbActivation)
+static VALUE clips_environment_activation_static_delete(VALUE self, VALUE rbActivation)
 {
-	return clips_environment_activation_delete_activation(rbActivation);
+	return clips_environment_activation_delete(rbActivation);
 }
 
 void Init_clipsruby(void)
@@ -5467,6 +5467,6 @@ void Init_clipsruby(void)
 	rb_define_method(rbActivation, "set_salience", clips_environment_activation_set_salience, 1);
 	rb_define_singleton_method(rbActivation, "pp_form", clips_environment_activation_static_pp_form, 1);
 	rb_define_method(rbActivation, "pp_form", clips_environment_activation_pp_form, 0);
-	rb_define_singleton_method(rbActivation, "delete_activation", clips_environment_activation_static_delete_activation, 1);
-	rb_define_method(rbActivation, "delete_activation", clips_environment_activation_delete_activation, 0);
+	rb_define_singleton_method(rbActivation, "delete", clips_environment_activation_static_delete, 1);
+	rb_define_method(rbActivation, "delete", clips_environment_activation_delete, 0);
 }

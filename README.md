@@ -536,6 +536,110 @@ CLIPS::Environment.unwatch(:facts)
 env.unwatch(:statistics)
 ```
 
+#### `CLIPS::Environment#refresh_all_agendas` / `CLIPS::Environment.refresh_all_agendas`
+
+Refresh agendas in all `Defmodule`s in the CLIPS `Environment`.
+
+```ruby
+CLIPS::Environment.refresh_all_agendas(env)
+env.refresh_all_agendas
+```
+
+#### `CLIPS::Environment#reorder_all_agendas` / `CLIPS::Environment.reorder_all_agendas`
+
+Reorder agendas in all `Defmodule`s in the CLIPS `Environment`.
+
+```ruby
+CLIPS::Environment.reorder_all_agendas(env)
+env.reorder_all_agendas
+```
+
+#### `CLIPS::Environment#get_agenda_changed` / `CLIPS::Environment.get_agenda_changed`
+
+Returns whether or not the agenda was changed in the `Environment`.
+
+```ruby
+CLIPS::Environment.get_agenda_changed(env)
+env.get_agenda_changed
+```
+
+#### `CLIPS::Environment#set_agenda_changed` / `CLIPS::Environment.set_agenda_changed`
+
+Sets whether or not the agenda was changed in the `Environment`.
+
+```ruby
+CLIPS::Environment.set_agenda_changed(env, false)
+env.set_agenda_changed true
+```
+
+#### `CLIPS::Environment#get_salience_evaluation` / `CLIPS::Environment.get_salience_evaluation`
+
+Returns the salience evaluation current set in the `Environment`.
+Possible return values are:
+
+- `:"when-defined"`
+- `:"when-activated"`
+- `:"every-cycle"`
+- `:unknown`
+
+```ruby
+CLIPS::Environment.get_salience_evaluation(env)
+env.get_salience_evaluation
+```
+
+#### `CLIPS::Environment#set_salience_evaluation` / `CLIPS::Environment.set_salience_evaluation`
+
+Sets the salience evaluation in the `Environment`.
+Possible arguments are:
+
+- `:"when-defined"`
+- `:"when-activated"`
+- `:"every-cycle"`
+- `:unknown`
+
+```ruby
+CLIPS::Environment.set_salience_evaluation(env, :"when-defined")
+env.set_salience_evaluation :"every-cycle"
+```
+
+#### `CLIPS::Environment#get_strategy` / `CLIPS::Environment.get_strategy`
+
+Returns the strategy current set in the `Environment`.
+Possible return values are:
+
+- `:depth`
+- `:breadth`
+- `:lex`
+- `:mea`
+- `:complexity`
+- `:simplicity`
+- `:random`
+- `:unknown`
+
+```ruby
+CLIPS::Environment.get_strategy(env)
+env.get_strategy
+```
+
+#### `CLIPS::Environment#set_strategy` / `CLIPS::Environment.set_strategy`
+
+Sets the strategy in the `Environment`.
+Possible arguments are:
+
+- `:depth`
+- `:breadth`
+- `:lex`
+- `:mea`
+- `:complexity`
+- `:simplicity`
+- `:random`
+- `:unknown`
+
+```ruby
+CLIPS::Environment.set_strategy(env, :lex)
+env.set_strategy :mea
+```
+
 ### Fact Methods
 
 #### `CLIPS::Environment::Fact.pp_form` / `CLIPS::Environment::Fact#pp_form`
@@ -951,6 +1055,41 @@ CLIPS::Environment::Defmodule.get_defrule_list(defmodule)
 defmodule.get_defrule_list
 ```
 
+#### `CLIPS::Environment::Defmodule.refresh_agenda` / `CLIPS::Environment::Defmodule#refresh_agenda` 
+
+Refreshes the agenda in a given Defmodule.
+If you used `CLIPS::Environment::Activation.set_salience` / 
+`CLIPS::Environment::Activation#set_salience` to set the salience
+of an activation, using `refresh_agenda` will set it back to its
+original salience.
+
+```ruby
+CLIPS::Environment::Defmodule.refresh_agenda(defmodule)
+defmodule.refresh_agenda
+```
+
+#### `CLIPS::Environment::Defmodule.reorder_agenda` / `CLIPS::Environment::Defmodule#reorder_agenda` 
+
+Refreshes the agenda in a given Defmodule.
+If you used `CLIPS::Environment::Activation.set_salience` / 
+`CLIPS::Environment::Activation#set_salience` to set the salience
+of an activation, using `reorder_agenda` will re-order the agenda
+according to the new salience of activations on the agenda.
+
+```ruby
+CLIPS::Environment::Defmodule.reorder_agenda(defmodule)
+defmodule.reorder_agenda
+```
+
+#### `CLIPS::Environment::Defmodule.delete_all_activations` / `CLIPS::Environment::Defmodule#delete_all_activations` 
+
+Deletes all activations in the agenda in a given Defmodule.
+
+```ruby
+CLIPS::Environment::Defmodule.delete_all_activations(defmodule)
+defmodule.delete_all_activations
+```
+
 ### Deftemplate Methods
 
 #### `CLIPS::Environment::Deftemplate.name` / `CLIPS::Environment::Deftemplate#name`
@@ -1165,13 +1304,49 @@ deffacts.pp_form
 
 ### Activation Methods
 
-#### `CLIPS::Environment::Activation.defule_name` / `CLIPS::Environment::Activation#defule_name`
+#### `CLIPS::Environment::Activation.delete` / `CLIPS::Environment::Activation#delete`
+
+Deletes an `Activation` from the agenda.
+
+```ruby
+CLIPS::Environment::Activation.delete
+activation.delete
+```
+
+#### `CLIPS::Environment::Activation.defrule_name` / `CLIPS::Environment::Activation#defrule_name`
 
 Returns the name of a defrule that triggered this activation.
 
 ```ruby
 CLIPS::Environment::Activation.defrule_name
 activation.defrule_name
+```
+
+#### `CLIPS::Environment::Activation.get_salience` / `CLIPS::Environment::Activation#get_salience`
+
+Returns the salience of this activation.
+
+```ruby
+CLIPS::Environment::Activation.get_salience(activation)
+activation.get_salience
+```
+
+#### `CLIPS::Environment::Activation.set_salience` / `CLIPS::Environment::Activation#set_salience`
+
+Sets the salience of this activation.
+
+```ruby
+CLIPS::Environment::Activation.set_salience(activation, 11)
+activation.set_salience 123
+```
+
+#### `CLIPS::Environment::Activation.pp_form` / `CLIPS::Environment::Activation#pp_form`
+
+Returns a pretty printed string representation of the Activation
+
+```ruby
+CLIPS::Environment::Activation.pp_form(activation)
+activation.pp_form
 ```
 
 ## Running the tests

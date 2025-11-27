@@ -1229,7 +1229,7 @@ class ClipsrubyTest < Minitest::Test
       env.get_instance_list.length
   end
 
-  def test_matches_get_activation_list_activation_defrule_name_get_salience_set_salience_refresh_agenda_refresh_all_agendas_reorder_agenda_reorder_all_agendas_pp_form_delete_activation_delete_all_activations_get_agenda_changed_set_agenda_changed
+  def test_matches_get_activation_list_activation_defrule_name_get_salience_set_salience_refresh_agenda_refresh_all_agendas_reorder_agenda_reorder_all_agendas_pp_form_delete_delete_all_activations_get_agenda_changed_set_agenda_changed
     env = CLIPS.create_environment
     refute env.get_agenda_changed
     env.build("(defrule a =>)")
@@ -1352,7 +1352,7 @@ class ClipsrubyTest < Minitest::Test
     assert_equal ["11     b: f-1", "9      h: f-2,f-1,f-1", "1      f: f-1,f-1", "0      g: f-2,f-1", "0      a: *"],
       activations.map(&:pp_form)
 
-    assert_nil activations[1].delete_activation
+    assert_nil activations[1].delete
     activations = env.get_activation_list
     assert_equal [:b, :f, :g, :a],
       activations.map(&:defrule_name)
