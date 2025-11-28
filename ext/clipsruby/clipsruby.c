@@ -115,6 +115,18 @@ static const rb_data_type_t Activation_type = {
 	.flags = RUBY_TYPED_FREE_IMMEDIATELY
 };
 
+size_t deffunction_size(const void *data)
+{
+	return sizeof(Deffunction);
+}
+
+static const rb_data_type_t Deffunction_type = {
+	.function = {
+		.dsize = deffunction_size
+	},
+	.flags = RUBY_TYPED_FREE_IMMEDIATELY
+};
+
 static VALUE clips_environment_fact_deftemplate(VALUE self)
 {
 	VALUE rbDeftemplate, rbEnvironment;
@@ -291,6 +303,11 @@ VALUE instance_alloc(VALUE self)
 VALUE activation_alloc(VALUE self)
 {
 	return TypedData_Wrap_Struct(self, &Activation_type, NULL);
+}
+
+VALUE deffunction_alloc(VALUE self)
+{
+	return TypedData_Wrap_Struct(self, &Deffunction_type, NULL);
 }
 
 VALUE environment_alloc(VALUE self)
@@ -2671,37 +2688,6 @@ static VALUE clips_environment_static_find_defrule(VALUE self, VALUE rbEnvironme
 	return clips_environment_find_defrule(rbEnvironment, defrule_name);
 }
 
-static VALUE clips_environment_find_deffacts(VALUE self, VALUE deffacts_name)
-{
-	Environment *env;
-	Deffacts *deffacts;
-
-	TypedData_Get_Struct(self, Environment, &Environment_type, env);
-
-	switch (TYPE(deffacts_name)) {
-		case T_STRING:
-			deffacts = FindDeffacts(env, StringValueCStr(deffacts_name));
-			break;
-		case T_SYMBOL:
-			deffacts = FindDeffacts(env, rb_id2name(SYM2ID(deffacts_name)));
-			break;
-                default:
-			rb_warn("deffacts name must be a symbol or string");
-			return Qnil;
-        }
-
-	if (deffacts == NULL) {
-		return Qnil;
-	} else {
-		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Deffacts")), &Deffacts_type, deffacts);
-	}
-}
-
-static VALUE clips_environment_static_find_deffacts(VALUE self, VALUE rbEnvironment, VALUE deffacts_name)
-{
-	return clips_environment_find_deffacts(rbEnvironment, deffacts_name);
-}
-
 static VALUE clips_environment_deffacts_name(VALUE self)
 {
 	Deffacts *deffacts;
@@ -2759,24 +2745,6 @@ static VALUE clips_environment_static_get_current_module(VALUE self, VALUE rbEnv
 	return clips_environment_get_current_module(rbEnvironment);
 }
 
-static VALUE clips_environment_set_current_module(VALUE self, VALUE rbDefmodule)
-{
-	Environment *env;
-	Defmodule *module;
-
-	TypedData_Get_Struct(self, Environment, &Environment_type, env);
-	TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, module);
-
-	SetCurrentModule(env, module);
-
-	return rbDefmodule;
-}
-
-static VALUE clips_environment_static_set_current_module(VALUE self, VALUE rbEnvironment, VALUE defmodule_name)
-{
-	return clips_environment_set_current_module(rbEnvironment, defmodule_name);
-}
-
 static VALUE clips_environment_find_defmodule(VALUE self, VALUE defmodule_name)
 {
 	Environment *env;
@@ -2810,6 +2778,38 @@ static VALUE clips_environment_static_find_defmodule(VALUE self, VALUE rbEnviron
 {
 	return clips_environment_find_defmodule(rbEnvironment, defmodule_name);
 }
+
+static VALUE clips_environment_set_current_module(VALUE self, VALUE defmodule_or_defmodule_name)
+{
+	VALUE rbDefmodule;
+	Environment *env;
+	Defmodule *module;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_STRING:
+		case T_SYMBOL:
+			rbDefmodule = clips_environment_find_defmodule(self, defmodule_or_defmodule_name);
+			break;
+		case T_DATA:
+			rbDefmodule = defmodule_or_defmodule_name;
+			break;
+                default:
+			rb_raise(rb_eTypeError, "Defmodule must be an instance of CLIPS::Environment::Defmodule, symbol, or string");
+			return Qnil;
+        }
+	TypedData_Get_Struct(rbDefmodule, Defmodule, &Defmodule_type, module);
+
+	SetCurrentModule(env, module);
+
+	return rbDefmodule;
+}
+
+static VALUE clips_environment_static_set_current_module(VALUE self, VALUE rbEnvironment, VALUE defmodule_name)
+{
+	return clips_environment_set_current_module(rbEnvironment, defmodule_name);
+}
+
 
 static VALUE clips_environment_find_instance(int argc, VALUE *argv, VALUE rbEnvironment) {
 	VALUE instanceName, search_imports, rbInstance, rbDefmodule;
@@ -2935,6 +2935,37 @@ static VALUE clips_environment_static_find_instance(int argc, VALUE *argv, VALUE
 	}
 }
 
+static VALUE clips_environment_find_deffacts(VALUE self, VALUE deffacts_name)
+{
+	Environment *env;
+	Deffacts *deffacts;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch (TYPE(deffacts_name)) {
+		case T_STRING:
+			deffacts = FindDeffacts(env, StringValueCStr(deffacts_name));
+			break;
+		case T_SYMBOL:
+			deffacts = FindDeffacts(env, rb_id2name(SYM2ID(deffacts_name)));
+			break;
+                default:
+			rb_warn("deffacts name must be a symbol or string");
+			return Qnil;
+        }
+
+	if (deffacts == NULL) {
+		return Qnil;
+	} else {
+		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Deffacts")), &Deffacts_type, deffacts);
+	}
+}
+
+static VALUE clips_environment_static_find_deffacts(VALUE self, VALUE rbEnvironment, VALUE deffacts_name)
+{
+	return clips_environment_find_deffacts(rbEnvironment, deffacts_name);
+}
+
 static VALUE clips_environment_defmodule_find_instance(int argc, VALUE *argv, VALUE rbDefmodule) {
 	VALUE instanceName, search_imports, rbInstance, rbEnvironment;
 	Defmodule *defmodule;
@@ -3025,6 +3056,40 @@ static VALUE clips_environment_defmodule_static_find_instance(int argc, VALUE *a
 
 		return rbInstance;
 	}
+}
+
+static VALUE clips_environment_find_deffunction(VALUE self, VALUE deffunction_name)
+{
+	Environment *env;
+	Deffunction *deffunction;
+
+	TypedData_Get_Struct(self, Environment, &Environment_type, env);
+
+	switch (TYPE(deffunction_name)) {
+		case T_STRING:
+			deffunction = FindDeffunction(env, StringValueCStr(deffunction_name));
+			break;
+		case T_SYMBOL:
+			deffunction = FindDeffunction(env, rb_id2name(SYM2ID(deffunction_name)));
+			break;
+                default:
+			rb_warn("deffunction name must be a symbol or string");
+			return Qnil;
+        }
+
+	if (deffunction == NULL) {
+		return Qnil;
+	} else {
+		VALUE rbDeffunction;
+		rbDeffunction = TypedData_Wrap_Struct(rb_const_get(CLASS_OF(self), rb_intern("Deffunction")), &Deffunction_type, deffunction);
+		rb_iv_set(rbDeffunction, "@environment", self);
+		return rbDeffunction;
+	}
+}
+
+static VALUE clips_environment_static_find_deffunction(VALUE self, VALUE rbEnvironment, VALUE deffunction_name)
+{
+	return clips_environment_find_deffunction(rbEnvironment, deffunction_name);
 }
 
 static VALUE clips_environment_defmodule_refresh_agenda(VALUE self)
@@ -3847,6 +3912,30 @@ static VALUE clips_environment_defmodule_get_defrule_list(VALUE self)
 static VALUE clips_environment_defmodule_static_get_defrule_list(VALUE self, VALUE rbDefmodule)
 {
 	return clips_environment_defmodule_get_defrule_list(rbDefmodule);
+}
+
+static VALUE clips_environment_defmodule_get_deffunction_list(VALUE self)
+{
+	Defmodule *module;
+	Environment *env;
+	CLIPSValue value;
+	VALUE out;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+
+	TypedData_Get_Struct(self, Defmodule, &Defmodule_type, module);
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	GetDeffunctionList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_defmodule_static_get_deffunction_list(VALUE self, VALUE rbDefmodule)
+{
+	return clips_environment_defmodule_get_deffunction_list(rbDefmodule);
 }
 
 static VALUE clips_environment_get_defmodule_list(VALUE self)
@@ -5054,6 +5143,73 @@ static VALUE clips_environment_static_set_strategy(VALUE self, VALUE rbEnvironme
 	return clips_environment_set_strategy(rbEnvironment, changed);
 }
 
+static VALUE clips_environment_get_deffunction_list(int argc, VALUE *argv, VALUE rbEnvironment) {
+	VALUE defmodule_or_defmodule_name;
+	Environment *env;
+	Defmodule *module;
+	CLIPSValue value;
+	VALUE out;
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	rb_scan_args(argc, argv, "01", &defmodule_or_defmodule_name);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_NIL:
+			module = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			TypedData_Get_Struct(
+				clips_environment_find_defmodule(rbEnvironment, defmodule_or_defmodule_name),
+				Defmodule, &Defmodule_type, module);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(defmodule_or_defmodule_name, Defmodule, &Defmodule_type, module);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+	GetDeffunctionList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_static_get_deffunction_list(int argc, VALUE *argv, VALUE klass) {
+	VALUE rbEnvironment, defmodule_or_defmodule_name;
+	Environment *env;
+	Defmodule *module;
+	CLIPSValue value;
+	VALUE out;
+
+	rb_scan_args(argc, argv, "11", &rbEnvironment, &defmodule_or_defmodule_name);
+
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+	switch (TYPE(defmodule_or_defmodule_name)) {
+		case T_NIL:
+			module = NULL;
+			break;
+		case T_STRING:
+		case T_SYMBOL:
+			TypedData_Get_Struct(
+				clips_environment_find_defmodule(rbEnvironment, defmodule_or_defmodule_name),
+				Defmodule, &Defmodule_type, module);
+			break;
+		case T_DATA:
+			TypedData_Get_Struct(defmodule_or_defmodule_name, Defmodule, &Defmodule_type, module);
+			break;
+                default:
+			rb_warn("defmodule name must be a symbol or string");
+			return Qnil;
+        }
+	GetDeffunctionList(env, &value, module);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
 
 static VALUE clips_environment_activation_defrule_name(VALUE self)
 {
@@ -5138,6 +5294,167 @@ static VALUE clips_environment_activation_static_delete(VALUE self, VALUE rbActi
 	return clips_environment_activation_delete(rbActivation);
 }
 
+static VALUE clips_environment_deffunction_name(VALUE self)
+{
+	Deffunction *deffunction;
+
+	TypedData_Get_Struct(self, Deffunction, &Deffunction_type, deffunction);
+
+	return ID2SYM(rb_intern(DeffunctionName(deffunction)));
+}
+
+static VALUE clips_environment_deffunction_static_name(VALUE self, VALUE rbDeffunction)
+{
+	return clips_environment_deffunction_name(rbDeffunction);
+}
+
+static VALUE clips_environment_deffunction_pp_form(VALUE self)
+{
+	Deffunction *deffunction;
+
+	TypedData_Get_Struct(self, Deffunction, &Deffunction_type, deffunction);
+
+	return rb_str_new2(DeffunctionPPForm(deffunction));
+}
+
+static VALUE clips_environment_deffunction_static_pp_form(VALUE self, VALUE rbDeffunction)
+{
+	return clips_environment_deffunction_pp_form(rbDeffunction);
+}
+
+static VALUE clips_environment_deffunction_is_deletable(VALUE self)
+{
+	Deffunction *deffunction;
+
+	TypedData_Get_Struct(self, Deffunction, &Deffunction_type, deffunction);
+
+	if (DeffunctionIsDeletable(deffunction)) {
+		return Qtrue;
+	} else {
+		return Qfalse;
+	}
+}
+
+static VALUE clips_environment_deffunction_static_is_deletable(VALUE self, VALUE rbDeffunction)
+{
+	return clips_environment_deffunction_is_deletable(rbDeffunction);
+}
+
+static VALUE clips_environment_deffunction_defmodule_name(VALUE self)
+{
+	Deffunction *function;
+
+	TypedData_Get_Struct(self, Deffunction, &Deffunction_type, function);
+
+	return ID2SYM(rb_intern(DeffunctionModule(function)));
+}
+
+static VALUE clips_environment_deffunction_static_defmodule_name(VALUE self, VALUE rbDeffunction)
+{
+	return clips_environment_deffunction_defmodule_name(rbDeffunction);
+}
+
+static VALUE clips_environment_deffunction_defmodule(VALUE self)
+{
+	Deffunction *function;
+	const char *defmoduleName;
+	Defmodule *defmodule = NULL;
+	Environment *env;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	TypedData_Get_Struct(self, Deffunction, &Deffunction_type, function);
+
+	defmoduleName = DeffunctionModule(function);
+
+	if (defmoduleName != NULL) {
+		defmodule = FindDefmodule(env, defmoduleName);
+	}
+
+	if (defmodule != NULL) {
+		return TypedData_Wrap_Struct(rb_const_get(CLASS_OF(rbEnvironment), rb_intern("Defmodule")), &Defmodule_type, defmodule);
+	} else {
+		return Qnil;
+	}
+}
+
+static VALUE clips_environment_deffunction_static_defmodule(VALUE self, VALUE rbDeffunction)
+{
+	return clips_environment_deffunction_defmodule(rbDeffunction);
+}
+
+static VALUE clips_environment_deffunction_call(int argc, VALUE *argv, VALUE self)
+{
+	FunctionCallBuilder *fcb;
+	Deffunction *function;
+	CLIPSValue value;
+	VALUE out;
+	const char *functionName, *defmoduleName, *currentDefmoduleName;
+	Environment *env;
+
+	VALUE rbEnvironment = rb_iv_get(self, "@environment");
+	TypedData_Get_Struct(rbEnvironment, Environment, &Environment_type, env);
+
+	TypedData_Get_Struct(self, Deffunction, &Deffunction_type, function);
+
+	functionName = DeffunctionName(function);
+	defmoduleName = DeffunctionModule(function);
+	currentDefmoduleName = DefmoduleName(GetCurrentModule(env));
+
+	fcb = CreateFunctionCallBuilder(env, argc);
+
+	for (int i = 0; i < argc; i++) {
+		value = VALUE_to_CLIPSValue(argv[i], env);
+		FCBAppend(fcb, &value);
+	}
+
+	switch(FCBCall(fcb, functionName, &value))
+	{
+		case FCBE_NO_ERROR:
+			break;
+		case FCBE_NULL_POINTER_ERROR:
+			FCBDispose(fcb);
+			rb_raise(rb_eStandardError, "Somehow the FunctionCallBuilder or Deffunction name was NULL\n");
+			break;
+		case FCBE_FUNCTION_NOT_FOUND_ERROR:
+			FCBDispose(fcb);
+			rb_raise(rb_eStandardError, "A function, deffunction, or generic function could not be found with the name %s defined in module %s from the current module %s\n", functionName, defmoduleName, currentDefmoduleName);
+			break;
+		case FCBE_INVALID_FUNCTION_ERROR:
+			FCBDispose(fcb);
+			rb_raise(rb_eStandardError, "The function or command has a specialized parser (such as the assert command) and cannot be invoked.\n");
+			break;
+		case FCBE_ARGUMENT_COUNT_ERROR:
+			FCBDispose(fcb);
+			rb_raise(rb_eStandardError,"The function was passed the incorrect number of arguments.\n");
+			break;
+		case FCBE_ARGUMENT_TYPE_ERROR:
+			FCBDispose(fcb);
+			rb_raise(rb_eStandardError,"The function was passed an argument with an invalid type.\n");
+			break;
+		case FCBE_PROCESSING_ERROR:
+			FCBDispose(fcb);
+			rb_raise(rb_eStandardError,"An error occurred while the function was being evaluated.\n");
+			break;
+		default:
+			FCBDispose(fcb);
+			rb_raise(rb_eStandardError,"Something went wrong calling the deffunction %s\n",functionName);
+			break;
+	}
+
+	FCBDispose(fcb);
+
+	CLIPSValue_to_VALUE(&value, &out, &rbEnvironment);
+
+	return out;
+}
+
+static VALUE clips_environment_deffunction_static_call(int argc, VALUE *argv, VALUE klass)
+{
+	return clips_environment_deffunction_call(argc, argv+1, argv[0]);
+}
+
 void Init_clipsruby(void)
 {
 	VALUE rbCLIPS = rb_define_module("CLIPS");
@@ -5203,6 +5520,10 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "find_defclass", clips_environment_find_defclass, 1);
 	rb_define_singleton_method(rbEnvironment, "find_instance", clips_environment_static_find_instance, -1);
 	rb_define_method(rbEnvironment, "find_instance", clips_environment_find_instance, -1);
+	rb_define_singleton_method(rbEnvironment, "find_deffacts", clips_environment_static_find_deffacts, 2);
+	rb_define_method(rbEnvironment, "find_deffacts", clips_environment_find_deffacts, 1);
+	rb_define_singleton_method(rbEnvironment, "find_deffunction", clips_environment_static_find_deffunction, 2);
+	rb_define_method(rbEnvironment, "find_deffunction", clips_environment_find_deffunction, 1);
 	rb_define_singleton_method(rbEnvironment, "get_current_module", clips_environment_static_get_current_module, 1);
 	rb_define_method(rbEnvironment, "get_current_module", clips_environment_get_current_module, 0);
 	rb_define_singleton_method(rbEnvironment, "set_current_module", clips_environment_static_set_current_module, 2);
@@ -5221,8 +5542,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbEnvironment, "get_defmodule_list", clips_environment_get_defmodule_list, 0);
 	rb_define_singleton_method(rbEnvironment, "get_activation_list", clips_environment_static_get_activation_list, 1);
 	rb_define_method(rbEnvironment, "get_activation_list", clips_environment_get_activation_list, 0);
-	rb_define_singleton_method(rbEnvironment, "find_deffacts", clips_environment_static_find_deffacts, 2);
-	rb_define_method(rbEnvironment, "find_deffacts", clips_environment_find_deffacts, 1);
+	rb_define_singleton_method(rbEnvironment, "get_deffunction_list", clips_environment_static_get_deffunction_list, -1);
+	rb_define_method(rbEnvironment, "get_deffunction_list", clips_environment_get_deffunction_list, -1);
 	rb_define_singleton_method(rbEnvironment, "watch", clips_environment_static_watch, 2);
 	rb_define_method(rbEnvironment, "watch", clips_environment_watch, 1);
 	rb_define_singleton_method(rbEnvironment, "watch_all", clips_environment_static_watch_all, 1);
@@ -5368,6 +5689,8 @@ void Init_clipsruby(void)
 	rb_define_method(rbDefmodule, "get_deftemplate_list", clips_environment_defmodule_get_deftemplate_list, 0);
 	rb_define_singleton_method(rbDefmodule, "get_defrule_list", clips_environment_defmodule_static_get_defrule_list, 1);
 	rb_define_method(rbDefmodule, "get_defrule_list", clips_environment_defmodule_get_defrule_list, 0);
+	rb_define_singleton_method(rbDefmodule, "get_deffunction_list", clips_environment_defmodule_static_get_deffunction_list, 1);
+	rb_define_method(rbDefmodule, "get_deffunction_list", clips_environment_defmodule_get_deffunction_list, 0);
 	rb_define_singleton_method(rbDefmodule, "find_instance", clips_environment_defmodule_static_find_instance, -1);
 	rb_define_method(rbDefmodule, "find_instance", clips_environment_defmodule_find_instance, -1);
 	rb_define_singleton_method(rbDefmodule, "refresh_agenda", clips_environment_defmodule_static_refresh_agenda, 1);
@@ -5469,4 +5792,19 @@ void Init_clipsruby(void)
 	rb_define_method(rbActivation, "pp_form", clips_environment_activation_pp_form, 0);
 	rb_define_singleton_method(rbActivation, "delete", clips_environment_activation_static_delete, 1);
 	rb_define_method(rbActivation, "delete", clips_environment_activation_delete, 0);
+
+	VALUE rbDeffunction = rb_define_class_under(rbEnvironment, "Deffunction", rb_cObject);
+	rb_define_alloc_func(rbDeffunction, deffunction_alloc);
+	rb_define_singleton_method(rbDeffunction, "name", clips_environment_deffunction_static_name, 1);
+	rb_define_method(rbDeffunction, "name", clips_environment_deffunction_name, 0);
+	rb_define_singleton_method(rbDeffunction, "pp_form", clips_environment_deffunction_static_pp_form, 1);
+	rb_define_method(rbDeffunction, "pp_form", clips_environment_deffunction_pp_form, 0);
+	rb_define_singleton_method(rbDeffunction, "is_deletable", clips_environment_deffunction_static_is_deletable, 1);
+	rb_define_method(rbDeffunction, "is_deletable", clips_environment_deffunction_is_deletable, 0);
+	rb_define_singleton_method(rbDeffunction, "defmodule", clips_environment_deffunction_static_defmodule, 1);
+	rb_define_method(rbDeffunction, "defmodule", clips_environment_deffunction_defmodule, 0);
+	rb_define_singleton_method(rbDeffunction, "defmodule_name", clips_environment_deffunction_static_defmodule_name, 1);
+	rb_define_method(rbDeffunction, "defmodule_name", clips_environment_deffunction_defmodule_name, 0);
+	rb_define_singleton_method(rbDeffunction, "call", clips_environment_deffunction_static_call, -1);
+	rb_define_method(rbDeffunction, "call", clips_environment_deffunction_call, -1);
 }

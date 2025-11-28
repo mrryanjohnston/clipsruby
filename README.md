@@ -483,6 +483,18 @@ CLIPS::Environment.get_defmodule_list(env)
 env.get_defmodule_list
 ```
 
+#### `CLIPS::Environment.get_deffunction_list` / `CLIPS::Environment#get_deffunction_list`
+
+Return an array of Deffunction names as symbols in the environment.
+Optionally pass a `Defmodule`.
+
+```ruby
+CLIPS::Environment.get_deffunction_list(env)
+env.get_deffunction_list
+CLIPS::Environment.get_deffunction_list(env, :MAIN)
+env.get_deffunction_list(defmodule)
+```
+
 #### `CLIPS::Environment.find_deftemplate` / `CLIPS::Environment#find_deftemplate`
 
 Finds a deftemplate by name and returns a CLIPS::Environment::Deftemplate object
@@ -1055,6 +1067,15 @@ CLIPS::Environment::Defmodule.get_defrule_list(defmodule)
 defmodule.get_defrule_list
 ```
 
+#### `CLIPS::Environment::Defmodule.get_deffunction_list` / `CLIPS::Environment::Defmodule#get_deffunction_list`
+
+Return an array of Deffunction names as symbols in the Defmodule
+
+```ruby
+CLIPS::Environment::Defmodule.get_deffunction_list(defmodule)
+defmodule.get_deffunction_list
+```
+
 #### `CLIPS::Environment::Defmodule.refresh_agenda` / `CLIPS::Environment::Defmodule#refresh_agenda` 
 
 Refreshes the agenda in a given Defmodule.
@@ -1282,7 +1303,25 @@ CLIPS::Environment.find_deffacts(:a)
 env.find_deffacts("foo")
 ```
 
+#### `CLIPS::Environment.find_deffunction` / `CLIPS::Environment#find_deffunction`
+
+Finds a `Deffunction` by name and returns a CLIPS::Environment::Deffunction object
+
+```ruby
+CLIPS::Environment.find_deffunction(:"MAIN::my_deffunction")
+env.find_deffunction("MAIN::other_deffunction")
+```
+
 ### Deffacts Methods
+
+#### `CLIPS::Environment::Deffunction.call` / `CLIPS::Environment::Deffunction#call` 
+
+Calls the `Deffunction`, passing it the arguments, returning the return value
+
+```ruby
+CLIPS::Environment::Deffunction.call(deffunction, :FOO, :BAR)
+deffunction.call(:FOO, :BAR)
+```
 
 #### `CLIPS::Environment::Deffacts.name` / `CLIPS::Environment::Deffacts#name`
 
@@ -1347,6 +1386,53 @@ Returns a pretty printed string representation of the Activation
 ```ruby
 CLIPS::Environment::Activation.pp_form(activation)
 activation.pp_form
+```
+
+### Deffunction Methods
+
+#### `CLIPS::Environment::Deffunction.name` / `CLIPS::Environment::Deffunction#name` 
+
+Returns the name of the `Deffunction` as a symbol
+
+```ruby
+CLIPS::Environment::Deffunction.name(deffunction)
+deffunction.name
+```
+
+#### `CLIPS::Environment::Deffunction.pp_form` / `CLIPS::Environment::Deffunction#pp_form` 
+
+Returns the pretty printed version of the `Deffunction`
+
+```ruby
+CLIPS::Environment::Deffunction.pp_form(deffunction)
+deffunction.pp_form
+```
+
+#### `CLIPS::Environment::Deffunction.is_deletable` / `CLIPS::Environment::Deffunction#is_deletable` 
+
+Returns whether the `Deffunction` is deletable or not
+
+```ruby
+CLIPS::Environment::Deffunction.is_deletable(deffunction)
+deffunction.is_deletable
+```
+
+#### `CLIPS::Environment::Deffunction.defmodule` / `CLIPS::Environment::Deffunction#defmodule` 
+
+Returns the `Defmodule` that the `Deffunction` is defined in
+
+```ruby
+CLIPS::Environment::Deffunction.defmodule(deffunction)
+deffunction.defmodule
+```
+
+#### `CLIPS::Environment::Deffunction.defmodule_name` / `CLIPS::Environment::Deffunction#defmodule_name` 
+
+Returns the name of the `Defmodule` that the `Deffunction` is defined in
+
+```ruby
+CLIPS::Environment::Deffunction.defmodule_name(deffunction)
+deffunction.defmodule_name
 ```
 
 ## Running the tests

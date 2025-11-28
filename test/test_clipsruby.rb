@@ -1378,4 +1378,45 @@ class ClipsrubyTest < Minitest::Test
     assert_equal :"when-activated",
       env.get_salience_evaluation
   end
+
+  def test_get_deffunction_list_find_deffunction_name_pp_form
+    env = CLIPS.create_environment
+    env.build("(deffunction my_deffunction (?foo ?bar) (return (create$ ?foo : ?bar)))")
+    env.build("(defmodule my_module (export deffunction other))")
+    env.build("(deffunction other () (return FALSE))")
+    assert_equal [:"MAIN::my_deffunction", :"my_module::other"],
+      env.get_deffunction_list
+    assert_equal [:my_deffunction],
+      env.get_deffunction_list(:MAIN)
+    assert_equal [:my_deffunction],
+      env.find_defmodule(:MAIN).get_deffunction_list
+    assert_equal [:other],
+      env.get_deffunction_list(:my_module)
+    assert_equal [:other],
+      env.find_defmodule(:my_module).get_deffunction_list
+    assert env.find_deffunction(:"my_module::other")
+    refute env.find_deffunction(:"blah")
+    assert_equal :MAIN,
+      env.find_deffunction(:"MAIN::my_deffunction").defmodule.name
+    assert_equal :my_module,
+      env.find_deffunction(:"my_module::other").defmodule.name
+    assert_equal :MAIN,
+      env.find_deffunction(:"MAIN::my_deffunction").defmodule_name
+    assert_equal :my_module,
+      env.find_deffunction(:"my_module::other").defmodule_name
+    assert_equal :my_deffunction,
+      env.find_deffunction(:"MAIN::my_deffunction").name
+    assert_equal :other,
+      env.find_deffunction(:"my_module::other").name
+    assert_equal "(deffunction MAIN::my_deffunction\n   (?foo ?bar)\n   (return (create$ ?foo : ?bar)))\n",
+      env.find_deffunction(:"MAIN::my_deffunction").pp_form
+    assert_equal "(deffunction my_module::other\n   ()\n   (return FALSE))\n",
+      env.find_deffunction(:"my_module::other").pp_form
+    assert_raises StandardError do
+      env.find_deffunction(:"MAIN::my_deffunction").call(:FOO, :BAR)
+    end
+    env.set_current_module :MAIN
+    assert_equal [:FOO, :":", :BAR],
+      env.find_deffunction(:"MAIN::my_deffunction").call(:FOO, :BAR)
+  end
 end
