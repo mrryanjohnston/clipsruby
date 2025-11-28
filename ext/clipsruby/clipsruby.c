@@ -5452,7 +5452,7 @@ static VALUE clips_environment_deffunction_call(int argc, VALUE *argv, VALUE sel
 
 static VALUE clips_environment_deffunction_static_call(int argc, VALUE *argv, VALUE klass)
 {
-	return clips_environment_deffunction_call(argc, argv+1, argv[0]);
+	return clips_environment_deffunction_call(argc-1, argv+1, argv[0]);
 }
 
 void Init_clipsruby(void)
