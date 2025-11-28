@@ -1314,15 +1314,6 @@ env.find_deffunction("MAIN::other_deffunction")
 
 ### Deffacts Methods
 
-#### `CLIPS::Environment::Deffunction.call` / `CLIPS::Environment::Deffunction#call` 
-
-Calls the `Deffunction`, passing it the arguments, returning the return value
-
-```ruby
-CLIPS::Environment::Deffunction.call(deffunction, :FOO, :BAR)
-deffunction.call(:FOO, :BAR)
-```
-
 #### `CLIPS::Environment::Deffacts.name` / `CLIPS::Environment::Deffacts#name`
 
 Returns the name of a deffacts as a symbol
@@ -1389,6 +1380,15 @@ activation.pp_form
 ```
 
 ### Deffunction Methods
+
+#### `CLIPS::Environment::Deffunction.call` / `CLIPS::Environment::Deffunction#call` 
+
+Calls the `Deffunction`, passing it the arguments, returning the return value
+
+```ruby
+CLIPS::Environment::Deffunction.call(deffunction, :FOO, :BAR)
+deffunction.call(:FOO, :BAR)
+```
 
 #### `CLIPS::Environment::Deffunction.name` / `CLIPS::Environment::Deffunction#name` 
 
